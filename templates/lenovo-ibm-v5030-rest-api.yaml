@@ -1,0 +1,505 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-07-12T04:11:58Z'
+  groups:
+  - uuid: 1728cbc109e9406181e03620b8d084ab
+    name: Templates/Lenovo
+  - uuid: 0835b2a34e4a43d6887f5887b0135acc
+    name: Templates/Servers Hardware
+  - uuid: c85c995bd8c447efaaa9ece4d12c299c
+    name: Templates/Storage
+  templates:
+  - uuid: 4420c8cfcc294bc1b4a41305284a03b1
+    template: Lenovo IBM V5030 REST API
+    name: Lenovo IBM V5030 REST API
+    description: "通过 Script Item 调用 V5030 (Spectrum Virtualize) REST API 采集状态。\n需要在\
+      \ Host 层面设置以下宏:\n  {$V5030.URL}      例如 https://10.1.1.10:7443\n  {$V5030.USER}\
+      \     REST API 用户名(建议 Monitor 权限只读账号)\n  {$V5030.PASSWORD} REST API 密码(Secret\
+      \ text 类型)\n"
+    groups:
+    - name: Templates/Storage
+    items:
+    - uuid: 825e5dfebc4942d68a4bdf42dbc7bbfd
+      name: 'V5030: Collect data (REST API)'
+      type: SCRIPT
+      key: v5030.collect
+      delay: 5m
+      history: 7d
+      trends: '0'
+      value_type: TEXT
+      params: "var baseUrl = '{$V5030.URL}';\nvar user    = '{$V5030.USER}';\nvar\
+        \ pass    = '{$V5030.PASSWORD}';\n\nfunction callApi(path, token) {\n    var\
+        \ req = new HttpRequest();\n    req.addHeader('Content-Type: application/json');\n\
+        \    if (token) {\n        req.addHeader('X-Auth-Token: ' + token);\n    }\
+        \ else {\n        req.addHeader('X-Auth-Username: ' + user);\n        req.addHeader('X-Auth-Password:\
+        \ ' + pass);\n    }\n    var resp = req.post(baseUrl + path, '{}');\n    var\
+        \ code = req.getStatus();\n    if (code < 200 || code >= 300) {\n        throw\
+        \ path + ' HTTP ' + code + ' body=' + resp;\n    }\n    try {\n        return\
+        \ JSON.parse(resp);\n    } catch (e) {\n        throw path + ' response is\
+        \ not valid JSON: ' + resp;\n    }\n}\n\ntry {\n    var auth = callApi('/rest/auth',\
+        \ null);\n    if (!auth || !auth.token) {\n        throw 'No token in auth\
+        \ response: ' + JSON.stringify(auth);\n    }\n    var token = auth.token;\n\
+        \n    var result = {};\n    result.system     = callApi('/rest/lssystem',\
+        \ token);\n    result.nodes      = callApi('/rest/lsnode', token);\n    result.mdisks\
+        \     = callApi('/rest/lsmdisk', token);\n    result.drives     = callApi('/rest/lsdrive',\
+        \ token);\n    result.enclosures = callApi('/rest/lsenclosure', token);\n\
+        \    result.pools      = callApi('/rest/lsmdiskgrp', token);\n\n    return\
+        \ JSON.stringify(result);\n} catch (e) {\n    throw 'V5030 collect failed:\
+        \ ' + e;\n}\n"
+      timeout: 30s
+      tags:
+      - tag: component
+        value: storage
+    - uuid: e6185c6e3ee8426ab511ebf63a983d25
+      name: 'V5030: Drives faulty/degraded'
+      type: DEPENDENT
+      key: v5030.drives.faulty_count
+      delay: '0'
+      history: 7d
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "var d = JSON.parse(value).drives;\nif (!Array.isArray(d)) return 0;\nvar\
+          \ count = 0;\nfor (var i = 0; i < d.length; i++) {\n    var s = String(d[i].status).toLowerCase();\n\
+          \    if (s === 'offline' || s === 'degraded' || s === 'faulty') count++;\n\
+          }\nreturn count;\n"
+      master_item:
+        key: v5030.collect
+      tags:
+      - tag: component
+        value: storage
+      triggers:
+      - uuid: 7d0f73532bfb4ed1acef9c9fe303f1c8
+        expression: last(/Lenovo IBM V5030 REST API/v5030.drives.faulty_count)>0
+        name: 'V5030: One or more drives are faulty/degraded'
+        priority: AVERAGE
+    - uuid: 5352478d81534e988ab8d6e90e81da9e
+      name: 'V5030: Enclosures with fault'
+      type: DEPENDENT
+      key: v5030.enclosures.fault_count
+      delay: '0'
+      history: 7d
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "var e = JSON.parse(value).enclosures;\nif (!Array.isArray(e)) return 0;\n\
+          var count = 0;\nfor (var i = 0; i < e.length; i++) {\n    var s = String(e[i].status).toLowerCase();\n\
+          \    if (s !== 'online') count++;\n}\nreturn count;\n"
+      master_item:
+        key: v5030.collect
+      tags:
+      - tag: component
+        value: storage
+      triggers:
+      - uuid: 4e6a5652c1be4bf682c3dcacd2600d87
+        expression: last(/Lenovo IBM V5030 REST API/v5030.enclosures.fault_count)>0
+        name: 'V5030: Enclosure fault detected'
+        priority: HIGH
+    - uuid: 9f1c1fe298c24afea9eb48e0f5a8af59
+      name: 'V5030: MDisks offline/degraded'
+      type: DEPENDENT
+      key: v5030.mdisks.offline_count
+      delay: '0'
+      history: 7d
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "var m = JSON.parse(value).mdisks;\nif (!Array.isArray(m)) return 0;\nvar\
+          \ count = 0;\nfor (var i = 0; i < m.length; i++) {\n    var s = String(m[i].status).toLowerCase();\n\
+          \    if (s !== 'online') count++;\n}\nreturn count;\n"
+      master_item:
+        key: v5030.collect
+      tags:
+      - tag: component
+        value: storage
+      triggers:
+      - uuid: bba0d1f02e7f46b0a7362e20ce8765b9
+        expression: last(/Lenovo IBM V5030 REST API/v5030.mdisks.offline_count)>0
+        name: 'V5030: One or more MDisks are offline/degraded'
+        priority: HIGH
+    - uuid: f8eff0a48a96412fb9898be18c31ddca
+      name: 'V5030: Nodes offline'
+      type: DEPENDENT
+      key: v5030.nodes.offline_count
+      delay: '0'
+      history: 7d
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "var n = JSON.parse(value).nodes;\nif (!Array.isArray(n)) return 0;\nvar\
+          \ count = 0;\nfor (var i = 0; i < n.length; i++) {\n    if (String(n[i].status).toLowerCase()\
+          \ !== 'online') count++;\n}\nreturn count;\n"
+      master_item:
+        key: v5030.collect
+      tags:
+      - tag: component
+        value: storage
+      triggers:
+      - uuid: 98d8b67219924186bda74478f3afba4e
+        expression: last(/Lenovo IBM V5030 REST API/v5030.nodes.offline_count)>0
+        name: 'V5030: One or more nodes are not online'
+        priority: HIGH
+    - uuid: 39e2168d54bf440c985127b1025f63b0
+      name: 'V5030: Nodes total'
+      type: DEPENDENT
+      key: v5030.nodes.total
+      delay: '0'
+      history: 7d
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - 'var n = JSON.parse(value).nodes;
+
+          return Array.isArray(n) ? n.length : 0;
+
+          '
+      master_item:
+        key: v5030.collect
+      tags:
+      - tag: component
+        value: storage
+    - uuid: a713971d87934c5ba2bec312e2005d49
+      name: 'V5030: Capacity used (%)'
+      type: DEPENDENT
+      key: v5030.system.capacity_used_pct
+      delay: '0'
+      history: 7d
+      value_type: FLOAT
+      units: '%'
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "function toBytes(raw) {\n    if (!raw) return 0;\n    var m = String(raw).match(/([\\\
+          d.]+)\\s*([KMGTP]?B)/i);\n    if (!m) return 0;\n    var num = parseFloat(m[1]);\n\
+          \    var unit = m[2].toUpperCase();\n    var mult = {B:1, KB:1024, MB:1024*1024,\
+          \ GB:1024*1024*1024,\n                TB:1024*1024*1024*1024, PB:1024*1024*1024*1024*1024};\n\
+          \    return num * (mult[unit] || 1);\n}\nvar d = JSON.parse(value).system;\n\
+          var total = toBytes(d.total_mdisk_capacity || d.total_capacity);\nvar free\
+          \  = toBytes(d.total_free_space);\nif (total <= 0) return 0;\nreturn Math.round(((total\
+          \ - free) / total) * 10000) / 100;\n"
+      master_item:
+        key: v5030.collect
+      tags:
+      - tag: component
+        value: storage
+      triggers:
+      - uuid: 32b8ecc0c77248b4b913afcdcb6ecac5
+        expression: last(/Lenovo IBM V5030 REST API/v5030.system.capacity_used_pct)>{$V5030.CAPACITY.CRIT}
+        name: 'V5030: Storage capacity usage critical (>{$V5030.CAPACITY.CRIT}%)'
+        priority: HIGH
+      - uuid: c2a1f0b3e9d84f3a9d2f7b1c6e5a8d4b
+        expression: last(/Lenovo IBM V5030 REST API/v5030.system.capacity_used_pct)>{$V5030.CAPACITY.WARN}
+        name: 'V5030: Storage capacity usage high (>{$V5030.CAPACITY.WARN}%)'
+        priority: WARNING
+        dependencies:
+        - name: 'V5030: Storage capacity usage critical (>{$V5030.CAPACITY.CRIT}%)'
+          expression: last(/Lenovo IBM V5030 REST API/v5030.system.capacity_used_pct)>{$V5030.CAPACITY.CRIT}
+    - uuid: 7f7f210d63c343dca23f9e953f00cd68
+      name: 'V5030: Firmware / code level'
+      type: DEPENDENT
+      key: v5030.system.code_level
+      delay: '0'
+      history: 7d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.system.code_level
+      master_item:
+        key: v5030.collect
+      tags:
+      - tag: component
+        value: storage
+    - uuid: fe4b26ce60de4d9585e2a8fbd270bcd2
+      name: 'V5030: Free capacity (bytes)'
+      type: DEPENDENT
+      key: v5030.system.free_capacity
+      delay: '0'
+      history: 7d
+      units: B
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "var d = JSON.parse(value).system;\nvar raw = d.total_free_space || d.free_capacity\
+          \ || '0';\nvar m = String(raw).match(/([\\d.]+)\\s*([KMGTP]?B)/i);\nif (!m)\
+          \ { return 0; }\nvar num = parseFloat(m[1]);\nvar unit = m[2].toUpperCase();\n\
+          var mult = {B:1, KB:1024, MB:1024*1024, GB:1024*1024*1024,\n           \
+          \ TB:1024*1024*1024*1024, PB:1024*1024*1024*1024*1024};\nreturn Math.round(num\
+          \ * (mult[unit] || 1));\n"
+      master_item:
+        key: v5030.collect
+      tags:
+      - tag: component
+        value: storage
+    - uuid: 238f6e433ebd4f778ab27383907a39a5
+      name: 'V5030: System name'
+      type: DEPENDENT
+      key: v5030.system.name
+      delay: '0'
+      history: 7d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.system.name
+      master_item:
+        key: v5030.collect
+      tags:
+      - tag: component
+        value: storage
+    - uuid: 35527933a3704016a284654195a1ed89
+      name: 'V5030: Total capacity (bytes)'
+      type: DEPENDENT
+      key: v5030.system.total_capacity
+      delay: '0'
+      history: 7d
+      units: B
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "// lssystem 里容量字段通常是带单位的字符串, 例如 \"10.00TB\"\n// 不同固件字段名略有差异, 这里做几个候选字段的兼容处理\n\
+          var d = JSON.parse(value).system;\nvar raw = d.total_mdisk_capacity || d.total_capacity\
+          \ || d.capacity || '0';\nvar m = String(raw).match(/([\\d.]+)\\s*([KMGTP]?B)/i);\n\
+          if (!m) { return 0; }\nvar num = parseFloat(m[1]);\nvar unit = m[2].toUpperCase();\n\
+          var mult = {B:1, KB:1024, MB:1024*1024, GB:1024*1024*1024,\n           \
+          \ TB:1024*1024*1024*1024, PB:1024*1024*1024*1024*1024};\nreturn Math.round(num\
+          \ * (mult[unit] || 1));\n"
+      master_item:
+        key: v5030.collect
+      tags:
+      - tag: component
+        value: storage
+    discovery_rules:
+    - uuid: 7f9cfad0fdcc4bd38a9277caee52824c
+      name: 'V5030: Drives discovery'
+      type: DEPENDENT
+      key: v5030.drives.discovery
+      delay: '0'
+      item_prototypes:
+      - uuid: ccfee17a7b3f4142bc513cdf985784e4
+        name: 'V5030 Drive {#DRIVEID} (slot {#SLOTID}, {#DRIVEUSE}): Status'
+        type: DEPENDENT
+        key: v5030.drive.status[{#DRIVEID}]
+        delay: '0'
+        history: 7d
+        trends: '0'
+        value_type: CHAR
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.drives[?(@.id=='{#DRIVEID}')].status
+        - type: JAVASCRIPT
+          parameters:
+          - 'var v = JSON.parse(value);
+
+            return Array.isArray(v) ? v[0] : v;
+
+            '
+        master_item:
+          key: v5030.collect
+        tags:
+        - tag: component
+          value: storage
+        trigger_prototypes:
+        - uuid: 6de49b7b16da4ea1aa1e4a730830b613
+          expression: last(/Lenovo IBM V5030 REST API/v5030.drive.status[{#DRIVEID}])<>"online"
+          name: 'V5030 Drive {#DRIVEID} (slot {#SLOTID}): status is not online'
+          priority: AVERAGE
+      master_item:
+        key: v5030.collect
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "// lsdrive 没有 name 字段, 用 id + slot_id 拼显示名\nvar drives = JSON.parse(value).drives;\n\
+          var result = [];\nif (!Array.isArray(drives)) return JSON.stringify(result);\n\
+          for (var i = 0; i < drives.length; i++) {\n    result.push({\n        '{#DRIVEID}':\
+          \ drives[i].id,\n        '{#SLOTID}': drives[i].slot_id,\n        '{#ENCLOSUREID}':\
+          \ drives[i].enclosure_id,\n        '{#DRIVEUSE}': drives[i].use\n    });\n\
+          }\nreturn JSON.stringify(result);\n"
+    - uuid: 32f8201329b746b8b588b3acb1241271
+      name: 'V5030: MDisks discovery'
+      type: DEPENDENT
+      key: v5030.mdisks.discovery
+      delay: '0'
+      item_prototypes:
+      - uuid: 87f9573462e84cb4aa4b6f29eaefa51f
+        name: 'V5030 MDisk {#MDISKNAME} ({#POOLNAME}): Status'
+        type: DEPENDENT
+        key: v5030.mdisk.status[{#MDISKID}]
+        delay: '0'
+        history: 7d
+        trends: '0'
+        value_type: CHAR
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.mdisks[?(@.id=='{#MDISKID}')].status
+        - type: JAVASCRIPT
+          parameters:
+          - 'var v = JSON.parse(value);
+
+            return Array.isArray(v) ? v[0] : v;
+
+            '
+        master_item:
+          key: v5030.collect
+        tags:
+        - tag: component
+          value: storage
+        trigger_prototypes:
+        - uuid: 831916139dcb4cf98773e95fe240ac88
+          expression: last(/Lenovo IBM V5030 REST API/v5030.mdisk.status[{#MDISKID}])<>"online"
+          name: 'V5030 MDisk {#MDISKNAME} ({#POOLNAME}): status is not online'
+          priority: HIGH
+      master_item:
+        key: v5030.collect
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "var mdisks = JSON.parse(value).mdisks;\nvar result = [];\nif (!Array.isArray(mdisks))\
+          \ return JSON.stringify(result);\nfor (var i = 0; i < mdisks.length; i++)\
+          \ {\n    result.push({\n        '{#MDISKID}': mdisks[i].id,\n        '{#MDISKNAME}':\
+          \ mdisks[i].name,\n        '{#POOLNAME}': mdisks[i].mdisk_grp_name\n   \
+          \ });\n}\nreturn JSON.stringify(result);\n"
+    - uuid: 60959e014be648ff99a39ea3dd795f84
+      name: 'V5030: Nodes discovery'
+      type: DEPENDENT
+      key: v5030.nodes.discovery
+      delay: '0'
+      item_prototypes:
+      - uuid: 77a8da7772b64a359d29f34878034c68
+        name: 'V5030 Node {#NODENAME}: Status'
+        type: DEPENDENT
+        key: v5030.node.status[{#NODEID}]
+        delay: '0'
+        history: 7d
+        trends: '0'
+        value_type: CHAR
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.nodes[?(@.id=='{#NODEID}')].status
+        - type: JAVASCRIPT
+          parameters:
+          - 'var v = JSON.parse(value);
+
+            return Array.isArray(v) ? v[0] : v;
+
+            '
+        master_item:
+          key: v5030.collect
+        tags:
+        - tag: component
+          value: storage
+        trigger_prototypes:
+        - uuid: 40cdba2cc6484c8c9fcb9ddec4fcf43f
+          expression: last(/Lenovo IBM V5030 REST API/v5030.node.status[{#NODEID}])<>"online"
+          name: 'V5030 Node {#NODENAME}: status is not online'
+          priority: HIGH
+      master_item:
+        key: v5030.collect
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "var nodes = JSON.parse(value).nodes;\nvar result = [];\nif (!Array.isArray(nodes))\
+          \ return JSON.stringify(result);\nfor (var i = 0; i < nodes.length; i++)\
+          \ {\n    result.push({\n        '{#NODEID}': nodes[i].id,\n        '{#NODENAME}':\
+          \ nodes[i].name,\n        '{#IOGROUP}': nodes[i].IO_group_name\n    });\n\
+          }\nreturn JSON.stringify(result);\n"
+    - uuid: 52db7038389b45da83a47731c54025c2
+      name: 'V5030: Pools discovery'
+      type: DEPENDENT
+      key: v5030.pools.discovery
+      delay: '0'
+      item_prototypes:
+      - uuid: 1a65bc3f0e5747649efbdeec554f0a9a
+        name: 'V5030 Pool {#POOLNAME}: Capacity used (%)'
+        type: DEPENDENT
+        key: v5030.pool.capacity_used_pct[{#POOLID}]
+        delay: '0'
+        history: 7d
+        value_type: FLOAT
+        units: '%'
+        preprocessing:
+        - type: JAVASCRIPT
+          parameters:
+          - "function toBytes(raw) {\n    if (!raw) return 0;\n    var m = String(raw).match(/([\\\
+            d.]+)\\s*([KMGTP]?B)/i);\n    if (!m) return 0;\n    var num = parseFloat(m[1]);\n\
+            \    var unit = m[2].toUpperCase();\n    var mult = {B:1, KB:1024, MB:1024*1024,\
+            \ GB:1024*1024*1024,\n                TB:1024*1024*1024*1024, PB:1024*1024*1024*1024*1024};\n\
+            \    return num * (mult[unit] || 1);\n}\nvar pools = JSON.parse(value).pools;\n\
+            var p = null;\nfor (var i = 0; i < pools.length; i++) {\n    if (pools[i].id\
+            \ === '{#POOLID}') { p = pools[i]; break; }\n}\nif (!p) throw 'pool {#POOLID}\
+            \ not found in response';\nvar total = toBytes(p.capacity);\nvar free\
+            \  = toBytes(p.free_capacity);\nif (total <= 0) return 0;\nreturn Math.round(((total\
+            \ - free) / total) * 10000) / 100;\n"
+        master_item:
+          key: v5030.collect
+        tags:
+        - tag: component
+          value: storage
+        trigger_prototypes:
+        - uuid: 7ce3033b0caa4c70b63903f03b2819b7
+          expression: last(/Lenovo IBM V5030 REST API/v5030.pool.capacity_used_pct[{#POOLID}])>{$V5030.CAPACITY.CRIT}
+          name: 'V5030 Pool {#POOLNAME}: capacity usage critical (>{$V5030.CAPACITY.CRIT}%)'
+          priority: HIGH
+        - uuid: fa68d62002e3401b922d3133c383ef33
+          expression: last(/Lenovo IBM V5030 REST API/v5030.pool.capacity_used_pct[{#POOLID}])>{$V5030.CAPACITY.WARN}
+          name: 'V5030 Pool {#POOLNAME}: capacity usage high (>{$V5030.CAPACITY.WARN}%)'
+          priority: WARNING
+          dependencies:
+          - name: 'V5030 Pool {#POOLNAME}: capacity usage critical (>{$V5030.CAPACITY.CRIT}%)'
+            expression: last(/Lenovo IBM V5030 REST API/v5030.pool.capacity_used_pct[{#POOLID}])>{$V5030.CAPACITY.CRIT}
+      - uuid: 86960f292ea7468db9870c375256d848
+        name: 'V5030 Pool {#POOLNAME}: Status'
+        type: DEPENDENT
+        key: v5030.pool.status[{#POOLID}]
+        delay: '0'
+        history: 7d
+        trends: '0'
+        value_type: CHAR
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.pools[?(@.id=='{#POOLID}')].status
+        - type: JAVASCRIPT
+          parameters:
+          - 'var v = JSON.parse(value);
+
+            return Array.isArray(v) ? v[0] : v;
+
+            '
+        master_item:
+          key: v5030.collect
+        tags:
+        - tag: component
+          value: storage
+        trigger_prototypes:
+        - uuid: a5ec4258500e48369954d9a17ecc9876
+          expression: last(/Lenovo IBM V5030 REST API/v5030.pool.status[{#POOLID}])<>"online"
+          name: 'V5030 Pool {#POOLNAME}: status is not online'
+          priority: HIGH
+      master_item:
+        key: v5030.collect
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "var pools = JSON.parse(value).pools;\nvar result = [];\nif (!Array.isArray(pools))\
+          \ return JSON.stringify(result);\nfor (var i = 0; i < pools.length; i++)\
+          \ {\n    result.push({\n        '{#POOLID}': pools[i].id,\n        '{#POOLNAME}':\
+          \ pools[i].name\n    });\n}\nreturn JSON.stringify(result);\n"
+    macros:
+    - macro: '{$V5030.CAPACITY.CRIT}'
+      value: '90'
+      description: 容量使用率严重阈值(%)
+    - macro: '{$V5030.CAPACITY.WARN}'
+      value: '80'
+      description: 容量使用率告警阈值(%)
+    - macro: '{$V5030.PASSWORD}'
+      type: SECRET_TEXT
+    - macro: '{$V5030.URL}'
+      value: https://192.168.1.1:7443
+    - macro: '{$V5030.USER}'
+      value: zabbix

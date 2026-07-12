@@ -1,0 +1,693 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-07-12T04:11:58Z'
+  groups:
+  - uuid: 1728cbc109e9406181e03620b8d084ab
+    name: Templates/Lenovo
+  - uuid: 0835b2a34e4a43d6887f5887b0135acc
+    name: Templates/Servers Hardware
+  - uuid: c85c995bd8c447efaaa9ece4d12c299c
+    name: Templates/Storage
+  templates:
+  - uuid: b1a12f811d914406b56c0b0ed85a29e2
+    template: Template Lenovo SR660 V2 Redfish AMI
+    name: Template Lenovo SR660 V2 Redfish AMI
+    description: 'Lenovo ThinkServer SR660 V2 (AMI-based XCC) Redfish monitoring template.
+
+      Built and validated against BMC firmware 6.a2.00 / RedfishVersion 1.8.0.
+
+      Covers: System health rollup, Chassis (incl. intrusion sensor), BMC/Manager
+      health,
+
+      Fans, Temperatures, Power Supplies, RAID Storage Controllers, Physical Drives.
+
+      Requires Zabbix 6.0+. Uses HTTP agent items (no external scripts, no agent install
+      on host).
+
+      Macros to configure per host: {$REDFISH.USER}, {$REDFISH.PASSWORD}, {$REDFISH.SCHEME}
+
+      '
+    groups:
+    - name: Templates/Lenovo
+    items:
+    - uuid: db80d557760e49cea439b7628474a5a1
+      name: 'BMC: Firmware Version'
+      type: DEPENDENT
+      key: redfish.bmc.firmware
+      delay: '0'
+      trends: '0'
+      value_type: TEXT
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.FirmwareVersion
+      master_item:
+        key: redfish.manager.get
+      tags:
+      - tag: Component
+        value: BMC
+      triggers:
+      - uuid: 3b26da3f84144160b401df090f64e645
+        expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.bmc.firmware,#1)<>last(/Template
+          Lenovo SR660 V2 Redfish AMI/redfish.bmc.firmware,#2)
+        name: BMC firmware version changed on {HOST.NAME}
+        priority: INFO
+    - uuid: 529560b982c94fbd98578682c533af63
+      name: 'BMC: Health'
+      type: DEPENDENT
+      key: redfish.bmc.health
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: TEXT
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Status.Health
+      master_item:
+        key: redfish.manager.get
+      tags:
+      - tag: Component
+        value: BMC
+      triggers:
+      - uuid: b90489f0b9ad4f9e8ee829d99c64b18d
+        expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.bmc.health)<>"OK"
+        name: BMC health not OK on {HOST.NAME}
+        priority: HIGH
+    - uuid: 7a29c62c2558406db2ef748f12c19921
+      name: 'Redfish: Get Chassis/1 (health, intrusion, indicator)'
+      type: HTTP_AGENT
+      key: redfish.chassis.get
+      delay: 10m
+      history: 7d
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$REDFISH.USER}'
+      password: '{$REDFISH.PASSWORD}'
+      timeout: 15s
+      url: '{$REDFISH.SCHEME}://{HOST.CONN}/redfish/v1/Chassis/1'
+      tags:
+      - tag: Component
+        value: Chassis
+    - uuid: ab48f4eab67c475c8f87b9fc0b0a997e
+      name: 'Chassis: Health Rollup'
+      type: DEPENDENT
+      key: redfish.chassis.health
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: TEXT
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Status.HealthRollup
+      master_item:
+        key: redfish.chassis.get
+      tags:
+      - tag: Component
+        value: Chassis
+      triggers:
+      - uuid: a225b915edd842d58cf02836abc82ebc
+        expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.chassis.health)<>"OK"
+        name: Chassis health rollup not OK on {HOST.NAME}
+        priority: HIGH
+    - uuid: be8ff91536984d1b88cdbee5663885cc
+      name: 'Chassis: Intrusion Sensor'
+      type: DEPENDENT
+      key: redfish.chassis.intrusion
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: TEXT
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.PhysicalSecurity.IntrusionSensor
+      master_item:
+        key: redfish.chassis.get
+      tags:
+      - tag: Component
+        value: Chassis
+      triggers:
+      - uuid: aaa7b2ed53064b85815c8d64e5af9453
+        expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.chassis.intrusion)="TamperingDetected"
+        name: Chassis intrusion / tampering detected on {HOST.NAME}
+        priority: HIGH
+    - uuid: 925115a1b026417cb1689cff3d8f3f39
+      name: 'Redfish: Get Managers/1 (BMC health, firmware)'
+      type: HTTP_AGENT
+      key: redfish.manager.get
+      delay: 10m
+      history: 7d
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$REDFISH.USER}'
+      password: '{$REDFISH.PASSWORD}'
+      timeout: 15s
+      url: '{$REDFISH.SCHEME}://{HOST.CONN}/redfish/v1/Managers/1'
+      tags:
+      - tag: Component
+        value: BMC
+    - uuid: 72f7ea7441b6494088e154b56fcae467
+      name: 'Power: Total Consumed Watts'
+      type: DEPENDENT
+      key: redfish.power.consumed.watts
+      delay: '0'
+      history: 30d
+      trends: 90d
+      units: W
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.PowerControl[0].PowerConsumedWatts
+      master_item:
+        key: redfish.power.get
+      tags:
+      - tag: Component
+        value: Power
+    - uuid: 1c10b0653ef04bb4a970063092b3c95a
+      name: 'Redfish: Get Power (PSU + power draw)'
+      type: HTTP_AGENT
+      key: redfish.power.get
+      delay: 10m
+      history: 7d
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$REDFISH.USER}'
+      password: '{$REDFISH.PASSWORD}'
+      timeout: 15s
+      url: '{$REDFISH.SCHEME}://{HOST.CONN}/redfish/v1/Chassis/1/Power'
+      tags:
+      - tag: Component
+        value: Power
+    - uuid: 66c7f42bb8ca4f2a89ee8feeeecc18ac
+      name: 'Redfish: Get Storage Raid10 controller'
+      type: HTTP_AGENT
+      key: redfish.storage.raid10.get
+      delay: 10m
+      history: 7d
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$REDFISH.USER}'
+      password: '{$REDFISH.PASSWORD}'
+      timeout: 15s
+      url: '{$REDFISH.SCHEME}://{HOST.CONN}/redfish/v1/Systems/1/Storages/Raid10'
+      tags:
+      - tag: Component
+        value: Storage
+    - uuid: b9196948df314e05b508653670852e7d
+      name: 'Storage: Raid10 Controller Health'
+      type: DEPENDENT
+      key: redfish.storage.raid10.health
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: TEXT
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.StorageControllers[0].Status.Health
+      master_item:
+        key: redfish.storage.raid10.get
+      tags:
+      - tag: Component
+        value: Storage
+      triggers:
+      - uuid: a89b8f9433e542a480d345e7fd5ab9ea
+        expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.storage.raid10.health)<>"OK"
+        name: Storage Raid10 controller health not OK on {HOST.NAME}
+        priority: HIGH
+    - uuid: c8f440294ad442c5ad7ec17d7d0612f7
+      name: 'Redfish: Get Storage StorageUnit_0 controllers'
+      type: HTTP_AGENT
+      key: redfish.storage.unit0.get
+      delay: 10m
+      history: 7d
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$REDFISH.USER}'
+      password: '{$REDFISH.PASSWORD}'
+      timeout: 15s
+      url: '{$REDFISH.SCHEME}://{HOST.CONN}/redfish/v1/Systems/1/Storages/StorageUnit_0'
+      tags:
+      - tag: Component
+        value: Storage
+    - uuid: 493c995ac1e2432f86c9cb473a24d21a
+      name: 'System: Processor Health'
+      type: DEPENDENT
+      key: redfish.system.cpu.health
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: TEXT
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.ProcessorSummary.Status.HealthRollup
+      master_item:
+        key: redfish.systems.get
+      tags:
+      - tag: Component
+        value: System
+    - uuid: f8d40ef381ba4aa3b9af7c623413be55
+      name: 'System: Health Rollup'
+      type: DEPENDENT
+      key: redfish.system.health
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: TEXT
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Status.HealthRollup
+      master_item:
+        key: redfish.systems.get
+      tags:
+      - tag: Component
+        value: System
+      triggers:
+      - uuid: f09c2953f39c4ed29355011440328bc8
+        expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.system.health)<>"OK"
+        name: System health rollup not OK on {HOST.NAME}
+        priority: HIGH
+    - uuid: dd09ede9a7374245a3485585517fe440
+      name: 'System: Memory Health'
+      type: DEPENDENT
+      key: redfish.system.memory.health
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: TEXT
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.MemorySummary.Status.HealthRollup
+      master_item:
+        key: redfish.systems.get
+      tags:
+      - tag: Component
+        value: System
+    - uuid: 606b8e2323a14bd4836e8bffda521ccb
+      name: 'System: Total Memory (GiB)'
+      type: DEPENDENT
+      key: redfish.system.memory.totalgib
+      delay: '0'
+      history: 30d
+      units: GiB
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.MemorySummary.TotalSystemMemoryGiB
+      master_item:
+        key: redfish.systems.get
+      tags:
+      - tag: Component
+        value: System
+    - uuid: d0edc99531704a7891bb8272909441c8
+      name: 'System: Power State'
+      type: DEPENDENT
+      key: redfish.system.powerstate
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: TEXT
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.PowerState
+      master_item:
+        key: redfish.systems.get
+      tags:
+      - tag: Component
+        value: System
+      triggers:
+      - uuid: 07d481b1aa2d44638b7d7c8a0a6f502d
+        expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.system.powerstate)<>"On"
+        name: System power state is not On for {HOST.NAME}
+        priority: AVERAGE
+    - uuid: 3109fe6b009e4e398a6d195ece61b59b
+      name: 'Redfish: Get Systems/1 (health, CPU, memory)'
+      type: HTTP_AGENT
+      key: redfish.systems.get
+      delay: 10m
+      history: 7d
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$REDFISH.USER}'
+      password: '{$REDFISH.PASSWORD}'
+      timeout: 15s
+      url: '{$REDFISH.SCHEME}://{HOST.CONN}/redfish/v1/Systems/1'
+      tags:
+      - tag: Component
+        value: System
+    - uuid: a87979be2ff94fab855572bf8504de39
+      name: 'Redfish: Get Thermal (fans + temperatures)'
+      type: HTTP_AGENT
+      key: redfish.thermal.get
+      delay: 10m
+      history: 7d
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$REDFISH.USER}'
+      password: '{$REDFISH.PASSWORD}'
+      timeout: 15s
+      url: '{$REDFISH.SCHEME}://{HOST.CONN}/redfish/v1/Chassis/1/Thermal'
+      tags:
+      - tag: Component
+        value: Thermal
+    discovery_rules:
+    - uuid: 11ab13f61fcc467fb314871f732c042c
+      name: Physical drive discovery
+      type: DEPENDENT
+      key: redfish.drive.discovery
+      delay: '0'
+      lifetime: 7d
+      item_prototypes:
+      - uuid: 788f8c9e877d4e2ba3002dd61862b1ff
+        name: 'Drive [{#DRIVE.NAME}]: Failure Predicted'
+        type: DEPENDENT
+        key: redfish.drive.failurepredicted[{#DRIVE.NAME}]
+        delay: '0'
+        history: 30d
+        trends: '0'
+        value_type: TEXT
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.FailurePredicted
+        master_item:
+          key: redfish.drive.get[{#DRIVE.NAME}]
+        tags:
+        - tag: Component
+          value: Drive
+        trigger_prototypes:
+        - uuid: 49aa18f732874ea3856faece76d23ece
+          expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.drive.failurepredicted[{#DRIVE.NAME}])="true"
+          name: Drive [{#DRIVE.NAME}] failure predicted (SMART) on {HOST.NAME}
+          priority: HIGH
+      - uuid: 7b06769225104bb8b5ff07fe4be74b14
+        name: 'Drive [{#DRIVE.NAME}]: Raw data'
+        type: HTTP_AGENT
+        key: redfish.drive.get[{#DRIVE.NAME}]
+        delay: 10m
+        history: 3d
+        trends: '0'
+        value_type: TEXT
+        authtype: BASIC
+        username: '{$REDFISH.USER}'
+        password: '{$REDFISH.PASSWORD}'
+        timeout: 15s
+        url: '{$REDFISH.SCHEME}://{HOST.CONN}{#DRIVE.URL}'
+        tags:
+        - tag: Component
+          value: Drive
+      - uuid: ee094d9b2851489cb23447443f5acae3
+        name: 'Drive [{#DRIVE.NAME}]: Health'
+        type: DEPENDENT
+        key: redfish.drive.health[{#DRIVE.NAME}]
+        delay: '0'
+        history: 30d
+        trends: '0'
+        value_type: TEXT
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.Status.Health
+        master_item:
+          key: redfish.drive.get[{#DRIVE.NAME}]
+        tags:
+        - tag: Component
+          value: Drive
+        trigger_prototypes:
+        - uuid: d2ea7a2410f04eec98f6050fb91571df
+          expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.drive.health[{#DRIVE.NAME}])<>"OK"
+          name: Drive [{#DRIVE.NAME}] health not OK on {HOST.NAME}
+          priority: HIGH
+      - uuid: 15ec1b87a2a243339cd2c37502b8719f
+        name: 'Drive [{#DRIVE.NAME}]: SSD Life Left (%)'
+        type: DEPENDENT
+        key: redfish.drive.lifeleft[{#DRIVE.NAME}]
+        delay: '0'
+        units: '%'
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.Status.LeftTime
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: redfish.drive.get[{#DRIVE.NAME}]
+        tags:
+        - tag: Component
+          value: Drive
+        trigger_prototypes:
+        - uuid: d40bd8884a6a4593b37ae22e306ff6b5
+          expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.drive.lifeleft[{#DRIVE.NAME}])<{$SSD.LEFTTIME.WARN}
+          name: Drive [{#DRIVE.NAME}] SSD life remaining below {$SSD.LEFTTIME.WARN}%
+            on {HOST.NAME}
+          priority: WARNING
+      - uuid: 2252c33d443b457e89c1d1df684f7d01
+        name: 'Drive [{#DRIVE.NAME}]: Temperature'
+        type: DEPENDENT
+        key: redfish.drive.temp[{#DRIVE.NAME}]
+        delay: '0'
+        history: 7d
+        trends: 90d
+        value_type: FLOAT
+        units: C
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.Temperature
+        - type: DISCARD_UNCHANGED_HEARTBEAT
+          parameters:
+          - 1h
+        master_item:
+          key: redfish.drive.get[{#DRIVE.NAME}]
+        tags:
+        - tag: Component
+          value: Drive
+      master_item:
+        key: redfish.chassis.get
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "var data = JSON.parse(value);\nvar out = [];\nvar drives = (data.Links\
+          \ && data.Links.Drives) ? data.Links.Drives : [];\nfor (var i = 0; i < drives.length;\
+          \ i++) {\n  var id = drives[i]['@odata.id'];\n  var name = id.split('/').pop();\n\
+          \  out.push({\n    '{#DRIVE.NAME}': name,\n    '{#DRIVE.URL}': id\n  });\n\
+          }\nreturn JSON.stringify(out);\n"
+    - uuid: 6e54a872bcfb42a594c0fb7ce8b23059
+      name: Fan discovery
+      type: DEPENDENT
+      key: redfish.fan.discovery
+      delay: '0'
+      lifetime: 7d
+      item_prototypes:
+      - uuid: 7c90934b5c0c4f63ae8a2dbe6b1a4334
+        name: 'Fan [{#FAN.NAME}]: Speed'
+        type: DEPENDENT
+        key: redfish.fan.speed[{#FAN.NAME}]
+        delay: '0'
+        history: 7d
+        trends: 90d
+        units: RPM
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.Fans[?(@.Name=='{#FAN.NAME}')].Reading.first()
+        master_item:
+          key: redfish.thermal.get
+        tags:
+        - tag: Component
+          value: Fan
+        trigger_prototypes:
+        - uuid: 562e0a9c88df4deab1579a8ca15feb4a
+          expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.fan.speed[{#FAN.NAME}])<{#FAN.LOWERCRIT}
+          name: Fan [{#FAN.NAME}] speed below critical threshold on {HOST.NAME}
+          priority: HIGH
+        - uuid: e2f4cb65d31e425e81b2c0f45ef6e159
+          expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.fan.speed[{#FAN.NAME}])<{#FAN.LOWERWARN}
+          name: Fan [{#FAN.NAME}] speed below warning threshold on {HOST.NAME}
+          priority: WARNING
+          dependencies:
+          - name: Fan [{#FAN.NAME}] speed below critical threshold on {HOST.NAME}
+            expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.fan.speed[{#FAN.NAME}])<{#FAN.LOWERCRIT}
+      - uuid: 07e3e32c0b2c4a7e9b81c1e954778eff
+        name: 'Fan [{#FAN.NAME}]: Status'
+        type: DEPENDENT
+        key: redfish.fan.status[{#FAN.NAME}]
+        delay: '0'
+        history: 7d
+        trends: '0'
+        value_type: TEXT
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.Fans[?(@.Name=='{#FAN.NAME}')].Status.Health.first()
+        master_item:
+          key: redfish.thermal.get
+        tags:
+        - tag: Component
+          value: Fan
+        trigger_prototypes:
+        - uuid: b99e069013ac47d8a2a27f2187156791
+          expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.fan.status[{#FAN.NAME}])<>"OK"
+          name: Fan [{#FAN.NAME}] health not OK on {HOST.NAME}
+          priority: HIGH
+      master_item:
+        key: redfish.thermal.get
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "var data = JSON.parse(value);\nvar out = [];\nfor (var i = 0; i < data.Fans.length;\
+          \ i++) {\n  var f = data.Fans[i];\n  if (f.ReadingUnits !== 'RPM') continue;\n\
+          \  if (f.Status && f.Status.State === 'Absent') continue;\n  out.push({\n\
+          \    '{#FAN.NAME}': f.Name,\n    '{#FAN.LOWERCRIT}': (f.LowerThresholdCritical\
+          \ !== undefined ? f.LowerThresholdCritical : '{$FAN.MIN.RPM}'),\n    '{#FAN.LOWERWARN}':\
+          \ (f.LowerThresholdNonCritical !== undefined ? f.LowerThresholdNonCritical\
+          \ : '{$FAN.MIN.RPM}')\n  });\n}\nreturn JSON.stringify(out);\n"
+    - uuid: 13d0c44daf334b42acd8c765cb525c2f
+      name: Power supply discovery
+      type: DEPENDENT
+      key: redfish.psu.discovery
+      delay: '0'
+      lifetime: 7d
+      item_prototypes:
+      - uuid: a03802dc5c0c40d68be186e012a0cc94
+        name: 'PSU [{#PSU.NAME}]: Output Watts'
+        type: DEPENDENT
+        key: redfish.psu.output[{#PSU.NAME}]
+        delay: '0'
+        history: 7d
+        trends: 90d
+        units: W
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.PowerSupplies[?(@.Name=='{#PSU.NAME}')].PowerOutputWatts.first()
+        master_item:
+          key: redfish.power.get
+        tags:
+        - tag: Component
+          value: PSU
+      - uuid: f3e170e5de104e978f0d3dc680ba7cb3
+        name: 'PSU [{#PSU.NAME}]: Status'
+        type: DEPENDENT
+        key: redfish.psu.status[{#PSU.NAME}]
+        delay: '0'
+        history: 7d
+        trends: '0'
+        value_type: TEXT
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.PowerSupplies[?(@.Name=='{#PSU.NAME}')].Status.Health.first()
+        master_item:
+          key: redfish.power.get
+        tags:
+        - tag: Component
+          value: PSU
+        trigger_prototypes:
+        - uuid: a8f8aa6c26b247f698961c94e38ace99
+          expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.psu.status[{#PSU.NAME}])<>"OK"
+          name: PSU [{#PSU.NAME}] health not OK on {HOST.NAME}
+          priority: HIGH
+      - uuid: 012acb1b332249778cd08fdc1f43d1d8
+        name: 'PSU [{#PSU.NAME}]: Input Voltage'
+        type: DEPENDENT
+        key: redfish.psu.voltage[{#PSU.NAME}]
+        delay: '0'
+        history: 7d
+        value_type: FLOAT
+        units: V
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.PowerSupplies[?(@.Name=='{#PSU.NAME}')].LineInputVoltage.first()
+        master_item:
+          key: redfish.power.get
+        tags:
+        - tag: Component
+          value: PSU
+      master_item:
+        key: redfish.power.get
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "var data = JSON.parse(value);\nvar out = [];\nfor (var i = 0; i < data.PowerSupplies.length;\
+          \ i++) {\n  var p = data.PowerSupplies[i];\n  out.push({\n    '{#PSU.NAME}':\
+          \ p.Name,\n    '{#PSU.CAPACITY}': p.PowerCapacityWatts\n  });\n}\nreturn\
+          \ JSON.stringify(out);\n"
+    - uuid: c2a61c01d56e4b29a5c7d6b756272fa1
+      name: Temperature sensor discovery
+      type: DEPENDENT
+      key: redfish.temp.discovery
+      delay: '0'
+      lifetime: 7d
+      item_prototypes:
+      - uuid: 2d7822a7c4014517909039c19c90e1f1
+        name: Temperature [{#TEMP.NAME}]
+        type: DEPENDENT
+        key: redfish.temp.reading[{#TEMP.NAME}]
+        delay: '0'
+        history: 7d
+        trends: 90d
+        value_type: FLOAT
+        units: C
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.Temperatures[?(@.Name=='{#TEMP.NAME}')].ReadingCelsius.first()
+        master_item:
+          key: redfish.thermal.get
+        tags:
+        - tag: Component
+          value: Temperature
+        trigger_prototypes:
+        - uuid: 5314b222199847dcad11c561d34d2235
+          expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.temp.reading[{#TEMP.NAME}])>{#TEMP.UPPERCRIT}
+          name: Temperature [{#TEMP.NAME}] above critical threshold on {HOST.NAME}
+          priority: HIGH
+        - uuid: ad96ab75c6f74346acffd959f3eda0d0
+          expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.temp.reading[{#TEMP.NAME}])>{#TEMP.UPPERWARN}
+          name: Temperature [{#TEMP.NAME}] above warning threshold on {HOST.NAME}
+          priority: WARNING
+          dependencies:
+          - name: Temperature [{#TEMP.NAME}] above critical threshold on {HOST.NAME}
+            expression: last(/Template Lenovo SR660 V2 Redfish AMI/redfish.temp.reading[{#TEMP.NAME}])>{#TEMP.UPPERCRIT}
+      master_item:
+        key: redfish.thermal.get
+      preprocessing:
+      - type: JAVASCRIPT
+        parameters:
+        - "var data = JSON.parse(value);\nvar out = [];\nfor (var i = 0; i < data.Temperatures.length;\
+          \ i++) {\n  var t = data.Temperatures[i];\n  if (t.Status && t.Status.State\
+          \ === 'Absent') continue;\n  out.push({\n    '{#TEMP.NAME}': t.Name,\n \
+          \   '{#TEMP.UPPERCRIT}': (t.UpperThresholdCritical !== undefined ? t.UpperThresholdCritical\
+          \ : ''),\n    '{#TEMP.UPPERWARN}': (t.UpperThresholdNonCritical !== undefined\
+          \ ? t.UpperThresholdNonCritical : '')\n  });\n}\nreturn JSON.stringify(out);\n"
+    macros:
+    - macro: '{$FAN.MIN.RPM}'
+      value: '500'
+      description: Fallback lower threshold for fan RPM if device does not report
+        LowerThresholdCritical
+    - macro: '{$REDFISH.PASSWORD}'
+      type: SECRET_TEXT
+      description: Redfish/BMC login password
+    - macro: '{$REDFISH.SCHEME}'
+      value: https
+      description: http or https
+    - macro: '{$REDFISH.USER}'
+      value: gang
+      description: Redfish/BMC login username
+    - macro: '{$SSD.LEFTTIME.WARN}'
+      value: '10'
+      description: SSD remaining life (%) warning threshold

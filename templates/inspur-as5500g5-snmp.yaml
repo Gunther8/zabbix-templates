@@ -1,0 +1,678 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-07-12T04:14:03Z'
+  groups:
+  - uuid: c85c995bd8c447efaaa9ece4d12c299c
+    name: Templates/Storage
+  templates:
+  - uuid: a9500b1754f0491eb9bb6e0404754710
+    template: Inspur AS5500G5 SNMP
+    name: Inspur AS5500G5 by SNMP
+    description: '基于浪潮 INSPUR_EXT_MIB (企业OID 1.3.6.1.4.1.48512) 编写的 Zabbix 6.0 SNMP
+      监控模板。
+
+      覆盖：集群状态与容量、机箱(Enclosure)、控制器/扩展框插箱(Canister)、电源(PSU)、风扇(Fan)、电池(BBU)、硬盘(Drive)。
+
+      使用前提：存储控制柜已开启 SNMP v1/v2c 或 v3(建议v3 authPriv)服务，host 接口按需配置团体字/USM用户。
+
+      数据来源 MIB: INSPUR_EXT_MIB_1_0_0.MIB
+
+      '
+    groups:
+    - name: Templates/Storage
+    items:
+    - uuid: 82ed28bdaa604fb9b5ca6e9ef1ac0d36
+      name: 'Cluster: Name'
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48512.2.1.0
+      key: cluster.name
+      delay: 1h
+      trends: '0'
+      value_type: CHAR
+      tags:
+      - tag: component
+        value: cluster
+    - uuid: dae57bbd51dc40e8acce3cec792e0acd
+      name: 'Cluster: Status'
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48512.2.9.0
+      key: cluster.status
+      delay: 2m
+      valuemap:
+        name: Inspur Cluster Status
+      tags:
+      - tag: component
+        value: cluster
+      triggers:
+      - uuid: ba8d939198e54a22a29124f9db3c5d75
+        expression: last(/Inspur AS5500G5 SNMP/cluster.status)<>0
+        name: '集群状态异常 (非 Active): {ITEM.LASTVALUE1}'
+        priority: HIGH
+    - uuid: f5f973a52038446ba71db89abe6f6609
+      name: 'Cluster: Software Version'
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48512.2.4.0
+      key: cluster.sysversion
+      delay: 1h
+      trends: '0'
+      value_type: CHAR
+      tags:
+      - tag: component
+        value: cluster
+    - uuid: 1e0a17608e0e4007b1a1950d2dc6cb50
+      name: 'Physical Storage: Available'
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48512.1.101.1.6.0
+      key: storage.physical.available
+      delay: 15m
+      units: B
+      tags:
+      - tag: component
+        value: capacity
+    - uuid: 4703cdf0664443cea9e39cd7759764b2
+      name: 'Physical Storage: Used Percent'
+      type: CALCULATED
+      key: storage.physical.pused
+      delay: 15m
+      value_type: FLOAT
+      units: '%'
+      params: last(//storage.physical.used)/last(//storage.physical.total)*100
+      tags:
+      - tag: component
+        value: capacity
+      triggers:
+      - uuid: dc074bac35104b048ef8d5bca70b25dd
+        expression: last(/Inspur AS5500G5 SNMP/storage.physical.pused)>{$STORAGE.PUSED.CRIT}
+        name: '物理存储空间使用率超过 {$STORAGE.PUSED.CRIT}%: {ITEM.LASTVALUE1}%'
+        priority: HIGH
+      - uuid: c658c14a01be4f25a6b4449969126b74
+        expression: last(/Inspur AS5500G5 SNMP/storage.physical.pused)>{$STORAGE.PUSED.WARN}
+        name: '物理存储空间使用率超过 {$STORAGE.PUSED.WARN}%: {ITEM.LASTVALUE1}%'
+        priority: WARNING
+    - uuid: cdd8e0297abf45d08776c61723973159
+      name: 'Physical Storage: Total'
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48512.1.101.1.4.0
+      key: storage.physical.total
+      delay: 15m
+      units: B
+      tags:
+      - tag: component
+        value: capacity
+    - uuid: 680ec5865cd440098a0a64471071de0f
+      name: 'Physical Storage: Used'
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48512.1.101.1.5.0
+      key: storage.physical.used
+      delay: 15m
+      units: B
+      tags:
+      - tag: component
+        value: capacity
+    - uuid: 248249845cba440899fcbb2f4554fe24
+      name: 'Pool Storage: Available'
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48512.1.101.3.6.0
+      key: storage.pool.available
+      delay: 15m
+      units: B
+      tags:
+      - tag: component
+        value: capacity
+    - uuid: 31c80a14caec4541abc40295075f3e76
+      name: 'Pool Storage: Total'
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48512.1.101.3.4.0
+      key: storage.pool.total
+      delay: 15m
+      units: B
+      tags:
+      - tag: component
+        value: capacity
+    - uuid: 30342045ada945ada6e9c1d2aa114ac8
+      name: 'Pool Storage: Used'
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48512.1.101.3.5.0
+      key: storage.pool.used
+      delay: 15m
+      units: B
+      tags:
+      - tag: component
+        value: capacity
+    discovery_rules:
+    - uuid: b3f6c9d00cbc483bb937ecc94912d152
+      name: BBU discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#SNMPVALUE},1.3.6.1.4.1.48512.1.108.8.1.3]
+      key: bbu.discovery
+      delay: 1h
+      item_prototypes:
+      - uuid: 645c51e8561e4f1c96fe74f9b57a8ad7
+        name: 'BBU [{#SNMPINDEX}]: Percent Charged'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.8.1.13.{#SNMPINDEX}
+        key: bbu.percentcharged[{#SNMPINDEX}]
+        delay: 5m
+        units: '%'
+        trigger_prototypes:
+        - uuid: 676887d1c8c84b2088038cfd6f80ac6b
+          expression: last(/Inspur AS5500G5 SNMP/bbu.percentcharged[{#SNMPINDEX}])<{$BBU.CHARGE.WARN}
+          name: '电池(BBU) [{#SNMPINDEX}] 电量偏低: {ITEM.LASTVALUE1}%'
+          priority: WARNING
+      - uuid: b3ab95ad49b24677980b2d1234696661
+        name: 'BBU [{#SNMPINDEX}]: Status'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.8.1.11.{#SNMPINDEX}
+        key: bbu.status[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: Inspur Online/Degraded/Offline Status
+        trigger_prototypes:
+        - uuid: 1f8b5da39d98487dbdbee4177a24a70a
+          expression: last(/Inspur AS5500G5 SNMP/bbu.status[{#SNMPINDEX}])<>0
+          name: '电池(BBU) [{#SNMPINDEX}] 状态异常: {ITEM.LASTVALUE1}'
+          priority: HIGH
+    - uuid: dd8951befa10466da87a538aaa5d169d
+      name: Canister discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#SNMPVALUE},1.3.6.1.4.1.48512.1.108.10.1.3]
+      key: canister.discovery
+      delay: 1h
+      item_prototypes:
+      - uuid: 2991256d2c3244e6ab5a5a5ef1d82177
+        name: 'Canister [{#SNMPINDEX}]: Status'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.10.1.7.{#SNMPINDEX}
+        key: canister.status[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: Inspur Canister/Drive Status
+        trigger_prototypes:
+        - uuid: 8db44fb692c14880aa1e7623efe73331
+          expression: last(/Inspur AS5500G5 SNMP/canister.status[{#SNMPINDEX}])<>0
+          name: '插箱(控制器) [{#SNMPINDEX}] 状态异常: {ITEM.LASTVALUE1}'
+          priority: HIGH
+      - uuid: d952240c0dff4d81bc3d08ac9b119cfc
+        name: 'Canister [{#SNMPINDEX}]: Temperature'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.10.1.9.{#SNMPINDEX}
+        key: canister.temperature[{#SNMPINDEX}]
+        delay: 2m
+        value_type: FLOAT
+        units: °C
+        trigger_prototypes:
+        - uuid: 74466d6237f747e4a60ef51b63b68914
+          expression: last(/Inspur AS5500G5 SNMP/canister.temperature[{#SNMPINDEX}])>{$CANISTER.TEMP.WARN}
+          name: '插箱 [{#SNMPINDEX}] 温度过高: {ITEM.LASTVALUE1}°C'
+          priority: WARNING
+    - uuid: 638e3148ea904d64a45dc382cb1b9dcf
+      name: Drive discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#SNMPVALUE},1.3.6.1.4.1.48512.1.108.4.1.2]
+      key: drive.discovery
+      delay: 1h
+      item_prototypes:
+      - uuid: 6843215ced46420f82827ed2c0d955d8
+        name: 'Drive [{#SNMPINDEX}]: Capacity'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.4.1.15.{#SNMPINDEX}
+        key: drive.capacity[{#SNMPINDEX}]
+        delay: 1h
+        units: B
+      - uuid: 98cf8c94701544c181b0441cf2bc9b6e
+        name: 'Drive [{#SNMPINDEX}]: Current Role'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.4.1.16.{#SNMPINDEX}
+        key: drive.role[{#SNMPINDEX}]
+        delay: 5m
+        valuemap:
+          name: Inspur Drive Role
+        trigger_prototypes:
+        - uuid: b2dee6fa688945e7adf7e9fbb65c4859
+          expression: last(/Inspur AS5500G5 SNMP/drive.role[{#SNMPINDEX}])=4
+          name: 硬盘 [{#SNMPINDEX}] 已标记为 failed
+          priority: HIGH
+      - uuid: be052b0c16d04abb9099e026d4dae713
+        name: 'Drive [{#SNMPINDEX}]: Status'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.4.1.14.{#SNMPINDEX}
+        key: drive.status[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: Inspur Canister/Drive Status
+        trigger_prototypes:
+        - uuid: 5535575c5f11457e87f9cfc5b2a03114
+          expression: last(/Inspur AS5500G5 SNMP/drive.status[{#SNMPINDEX}])=1
+          name: 硬盘 [{#SNMPINDEX}] 状态降级(degraded)
+          priority: WARNING
+        - uuid: 122cd3ddeac64b7db297434d89b337be
+          expression: last(/Inspur AS5500G5 SNMP/drive.status[{#SNMPINDEX}])=2
+          name: 硬盘 [{#SNMPINDEX}] 离线(offline)
+          priority: HIGH
+    - uuid: f98d8cadef984ef499ac34e545474af0
+      name: Enclosure discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#SNMPVALUE},1.3.6.1.4.1.48512.1.108.9.1.2]
+      key: enclosure.discovery
+      delay: 1h
+      item_prototypes:
+      - uuid: 7c6e9b42ce2540b08ce50a0fbf2210ae
+        name: 'Enclosure [{#SNMPINDEX}]: Status'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.9.1.13.{#SNMPINDEX}
+        key: enclosure.status[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: Inspur Online/Degraded/Offline Status
+        trigger_prototypes:
+        - uuid: cd4e29e9e2294fb4bba3efa4680bcf70
+          expression: last(/Inspur AS5500G5 SNMP/enclosure.status[{#SNMPINDEX}])<>0
+          name: '机箱 [{#SNMPINDEX}] 状态异常: {ITEM.LASTVALUE1}'
+          priority: HIGH
+      - uuid: f286eeaf3cc549099353ac4929fd5257
+        name: 'Enclosure [{#SNMPINDEX}]: Type'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.9.1.14.{#SNMPINDEX}
+        key: enclosure.type[{#SNMPINDEX}]
+        delay: 1h
+        valuemap:
+          name: Inspur Enclosure Type
+    - uuid: 750ef3d06c1b483e91752a443419602e
+      name: Fan discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#SNMPVALUE},1.3.6.1.4.1.48512.1.108.7.1.3]
+      key: fan.discovery
+      delay: 1h
+      item_prototypes:
+      - uuid: c502ee4971314824b346e115e9582e2a
+        name: 'Fan [{#SNMPINDEX}]: Status'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.7.1.7.{#SNMPINDEX}
+        key: fan.status[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: Inspur Online/Degraded/Offline Status
+        trigger_prototypes:
+        - uuid: 62f6d0b1dab54ebf99e75f50ad59ca2b
+          expression: last(/Inspur AS5500G5 SNMP/fan.status[{#SNMPINDEX}])<>0
+          name: '风扇 [{#SNMPINDEX}] 状态异常: {ITEM.LASTVALUE1}'
+          priority: WARNING
+    - uuid: fe760d39bafb45e8a02b9082edf81fd2
+      name: FC Port discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#SNMPVALUE},1.3.6.1.4.1.48512.1.108.11.3.1.6]
+      key: fcport.discovery
+      delay: 1h
+      item_prototypes:
+      - uuid: 488474f65cde482bb264b563249cac3c
+        name: 'FC Port [{#SNMPINDEX}]: Speed'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.11.3.1.4.{#SNMPINDEX}
+        key: fcport.speed[{#SNMPINDEX}]
+        delay: 15m
+        trends: '0'
+        value_type: CHAR
+      - uuid: 2c60da4b63f6432fb5acfe75e1f29b2a
+        name: 'FC Port [{#SNMPINDEX}]: Status'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.11.3.1.11.{#SNMPINDEX}
+        key: fcport.status[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: Inspur FC Port Status
+        trigger_prototypes:
+        - uuid: 66698880e2774badb7ea3dbbe80164a8
+          expression: last(/Inspur AS5500G5 SNMP/fcport.status[{#SNMPINDEX}])=1
+          name: FC端口 [{#SNMPINDEX}] 链路中断(inactive)
+          priority: HIGH
+    - uuid: 40576f3fe2d8472e93caceabcbe1a6c7
+      name: iSCSI Port discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#SNMPVALUE},1.3.6.1.4.1.48512.1.108.11.1.1.13]
+      key: iscsiport.discovery
+      delay: 1h
+      item_prototypes:
+      - uuid: ecac53e48cfc492499896a8a544e5a32
+        name: 'iSCSI Port [{#SNMPINDEX}]: IP Address'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.11.1.1.4.{#SNMPINDEX}
+        key: iscsiport.ip[{#SNMPINDEX}]
+        delay: 1h
+        trends: '0'
+        value_type: CHAR
+      - uuid: c28c00dce8114690b43969c75935d108
+        name: 'iSCSI Port [{#SNMPINDEX}]: Link State'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.11.1.1.18.{#SNMPINDEX}
+        key: iscsiport.linkstate[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: Inspur iSCSI Link State
+        trigger_prototypes:
+        - uuid: a8f3fb782dec475a983a45e0b5744c65
+          expression: last(/Inspur AS5500G5 SNMP/iscsiport.linkstate[{#SNMPINDEX}])=1
+          name: iSCSI端口 [{#SNMPINDEX}] 链路断开(inactive)
+          priority: WARNING
+      - uuid: 8b5608cc111d49339cd8b0997796121e
+        name: 'iSCSI Port [{#SNMPINDEX}]: State'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.11.1.1.17.{#SNMPINDEX}
+        key: iscsiport.state[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: Inspur iSCSI Port State
+        trigger_prototypes:
+        - uuid: d08ef0d225b64fa5894b05e7c931e402
+          expression: last(/Inspur AS5500G5 SNMP/iscsiport.state[{#SNMPINDEX}])=1
+          name: iSCSI端口 [{#SNMPINDEX}] 离线(offline)
+          priority: HIGH
+    - uuid: 5dd3e4f5a82f4ed39fc40001374edf71
+      name: PSU discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#SNMPVALUE},1.3.6.1.4.1.48512.1.108.6.1.3]
+      key: psu.discovery
+      delay: 1h
+      item_prototypes:
+      - uuid: 66bc49cf20e24082849b5fac9fdaaca3
+        name: 'PSU [{#SNMPINDEX}]: Input Fail'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.6.1.12.{#SNMPINDEX}
+        key: psu.inputfail[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: Inspur PSU Fail Flag (0=on/Fail,1=off/OK)
+        trigger_prototypes:
+        - uuid: ceb93ad03d064490bb4a84bbdd31b881
+          expression: last(/Inspur AS5500G5 SNMP/psu.inputfail[{#SNMPINDEX}])=0
+          name: 电源 [{#SNMPINDEX}] 输入故障(市电/输入丢失)
+          priority: HIGH
+      - uuid: 930fd27d00394e45acf4ba855821c550
+        name: 'PSU [{#SNMPINDEX}]: Output Fail'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.6.1.13.{#SNMPINDEX}
+        key: psu.outputfail[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: Inspur PSU Fail Flag (0=on/Fail,1=off/OK)
+        trigger_prototypes:
+        - uuid: 8e65f0ae42c347aeb513c93de60962d4
+          expression: last(/Inspur AS5500G5 SNMP/psu.outputfail[{#SNMPINDEX}])=0
+          name: 电源 [{#SNMPINDEX}] 输出故障
+          priority: HIGH
+      - uuid: b6260775c6104798bdf4913dc731b7c9
+        name: 'PSU [{#SNMPINDEX}]: Status'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.6.1.11.{#SNMPINDEX}
+        key: psu.status[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: Inspur Online/Degraded/Offline Status
+        trigger_prototypes:
+        - uuid: 4e093bd1d221473b9a5d96229388ae5f
+          expression: last(/Inspur AS5500G5 SNMP/psu.status[{#SNMPINDEX}])<>0
+          name: '电源 [{#SNMPINDEX}] 状态异常: {ITEM.LASTVALUE1}'
+          priority: HIGH
+    - uuid: 63655b5eb3ad4817a73c97b9f5ecb4a5
+      name: SAS Port discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#SNMPVALUE},1.3.6.1.4.1.48512.1.108.11.2.1.6]
+      key: sasport.discovery
+      delay: 1h
+      item_prototypes:
+      - uuid: a73c8c0941324dd589f828c22e025346
+        name: 'SAS Port [{#SNMPINDEX}]: Status'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.108.11.2.1.10.{#SNMPINDEX}
+        key: sasport.status[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: Inspur SAS Port Status
+        trigger_prototypes:
+        - uuid: 5324cf9e5a3241f3b1361e007ca3aa4a
+          expression: last(/Inspur AS5500G5 SNMP/sasport.status[{#SNMPINDEX}])=3
+          name: SAS端口 [{#SNMPINDEX}] 状态降级(degraded)
+          priority: WARNING
+        - uuid: 021337f8b4014514a64bdf45cef2ecb3
+          expression: last(/Inspur AS5500G5 SNMP/sasport.status[{#SNMPINDEX}])=1
+          name: SAS端口 [{#SNMPINDEX}] 离线(offline)
+          priority: HIGH
+    - uuid: 7c502b680b6742018c80e9878ce78426
+      name: System performance discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#SNMPVALUE},1.3.6.1.4.1.48512.1.107.2.1.2]
+      key: sysperf.discovery
+      delay: 1h
+      description: 基于 systemStatsTable(performance.2)，每个 {#SNMPINDEX} 通常对应一个节点/IO组的性能采样行
+      item_prototypes:
+      - uuid: e77c1c67208a4d1dbfa10f7c764a992e
+        name: 'Node [{#SNMPINDEX}]: Cache Read Rate'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.107.2.1.19.{#SNMPINDEX}
+        key: sysperf.cache.readrate[{#SNMPINDEX}]
+        value_type: FLOAT
+        units: '%'
+      - uuid: 8e103c15ab9647ef9359cb0703079a9d
+        name: 'Node [{#SNMPINDEX}]: Cache Write Rate'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.107.2.1.18.{#SNMPINDEX}
+        key: sysperf.cache.writerate[{#SNMPINDEX}]
+        value_type: FLOAT
+        units: '%'
+      - uuid: b785b7d36a764c65b3326da2278452ad
+        name: 'Node [{#SNMPINDEX}]: CPU Utilization'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.107.2.1.2.{#SNMPINDEX}
+        key: sysperf.cpu[{#SNMPINDEX}]
+        value_type: FLOAT
+        units: '%'
+        trigger_prototypes:
+        - uuid: 919ab7cca1cf4e759c213dcf2bec9491
+          expression: min(/Inspur AS5500G5 SNMP/sysperf.cpu[{#SNMPINDEX}],10m)>{$CPU.UTIL.WARN}
+          name: '节点 [{#SNMPINDEX}] CPU 使用率持续偏高: {ITEM.LASTVALUE1}%'
+          priority: WARNING
+      - uuid: d71ce73685664275af3d569f4891b617
+        name: 'Node [{#SNMPINDEX}]: Drive Throughput'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.107.2.1.15.{#SNMPINDEX}
+        key: sysperf.drive.mb[{#SNMPINDEX}]
+        value_type: FLOAT
+        units: MBps
+      - uuid: 9b8ca10cf615447388989e949c7ca7b5
+        name: 'Node [{#SNMPINDEX}]: Drive Latency'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.107.2.1.17.{#SNMPINDEX}
+        key: sysperf.drive.ms[{#SNMPINDEX}]
+        value_type: FLOAT
+        units: ms
+      - uuid: 592c6ea567ef43f58e42731d1938dfea
+        name: 'Node [{#SNMPINDEX}]: FC IOPS'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.107.2.1.4.{#SNMPINDEX}
+        key: sysperf.fc.io[{#SNMPINDEX}]
+        value_type: FLOAT
+        units: iops
+      - uuid: 1210d1adba264d08a371e35754a54255
+        name: 'Node [{#SNMPINDEX}]: FC Throughput'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.107.2.1.3.{#SNMPINDEX}
+        key: sysperf.fc.mb[{#SNMPINDEX}]
+        value_type: FLOAT
+        units: MBps
+      - uuid: b029fcccb1164365bb7aae913b07640f
+        name: 'Node [{#SNMPINDEX}]: SAS IOPS'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.107.2.1.6.{#SNMPINDEX}
+        key: sysperf.sas.io[{#SNMPINDEX}]
+        value_type: FLOAT
+        units: iops
+      - uuid: 77a2a302e3be405f8eb0f51945dad077
+        name: 'Node [{#SNMPINDEX}]: SAS Throughput'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.107.2.1.5.{#SNMPINDEX}
+        key: sysperf.sas.mb[{#SNMPINDEX}]
+        value_type: FLOAT
+        units: MBps
+      - uuid: 86ed30b846d844f8af97bd114a1bcb50
+        name: 'Node [{#SNMPINDEX}]: Volume IOPS'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.107.2.1.10.{#SNMPINDEX}
+        key: sysperf.vdisk.io[{#SNMPINDEX}]
+        value_type: FLOAT
+        units: iops
+      - uuid: a5f99494f64f4be588fe9ac926a14a97
+        name: 'Node [{#SNMPINDEX}]: Volume Throughput'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.107.2.1.9.{#SNMPINDEX}
+        key: sysperf.vdisk.mb[{#SNMPINDEX}]
+        value_type: FLOAT
+        units: MBps
+      - uuid: 54e6654fe860401e9f39f88b96a2fc39
+        name: 'Node [{#SNMPINDEX}]: Volume Latency'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.4.1.48512.1.107.2.1.11.{#SNMPINDEX}
+        key: sysperf.vdisk.ms[{#SNMPINDEX}]
+        value_type: FLOAT
+        units: ms
+        trigger_prototypes:
+        - uuid: 18b6bae75d8545f684a8b14f81ded2b6
+          expression: min(/Inspur AS5500G5 SNMP/sysperf.vdisk.ms[{#SNMPINDEX}],10m)>{$VDISK.LATENCY.WARN}
+          name: '节点 [{#SNMPINDEX}] 卷响应时延持续偏高: {ITEM.LASTVALUE1}ms'
+          priority: WARNING
+    macros:
+    - macro: '{$BBU.CHARGE.WARN}'
+      value: '50'
+      description: BBU电池电量告警阈值(%)
+    - macro: '{$CANISTER.TEMP.WARN}'
+      value: '55'
+      description: 控制器/插箱温度告警阈值(摄氏度)
+    - macro: '{$CPU.UTIL.WARN}'
+      value: '90'
+      description: 节点CPU使用率持续告警阈值(%)
+    - macro: '{$STORAGE.PUSED.CRIT}'
+      value: '90'
+      description: 物理存储使用率严重阈值(%)
+    - macro: '{$STORAGE.PUSED.WARN}'
+      value: '80'
+      description: 物理存储使用率告警阈值(%)
+    - macro: '{$VDISK.LATENCY.WARN}'
+      value: '20'
+      description: 卷(vdisk)响应时延告警阈值(ms)
+    valuemaps:
+    - uuid: 8f6854a6ba61405b8994f282097d1a05
+      name: Inspur Canister/Drive Status
+      mappings:
+      - value: '-1'
+        newvalue: Unknown
+      - value: '0'
+        newvalue: Online
+      - value: '1'
+        newvalue: Degraded
+      - value: '2'
+        newvalue: Offline
+      - value: '3'
+        newvalue: Invalid
+    - uuid: 2f4b1990a9634f7e99bc4e548923fad4
+      name: Inspur Cluster Status
+      mappings:
+      - value: '-1'
+        newvalue: Unknown
+      - value: '0'
+        newvalue: Active
+      - value: '1'
+        newvalue: Inactive
+      - value: '2'
+        newvalue: Degraded
+      - value: '3'
+        newvalue: Unconfigured
+    - uuid: aa4078a99ef14b1a9a23a7a1c879181f
+      name: Inspur Drive Role
+      mappings:
+      - value: '-1'
+        newvalue: Unknown
+      - value: '0'
+        newvalue: Unused
+      - value: '1'
+        newvalue: Candidate
+      - value: '2'
+        newvalue: Spare
+      - value: '3'
+        newvalue: Member
+      - value: '4'
+        newvalue: Failed
+    - uuid: 8cd4693cf9b0424eabb2ac59896e05e5
+      name: Inspur Enclosure Type
+      mappings:
+      - value: '-1'
+        newvalue: Unknown
+      - value: '0'
+        newvalue: Control
+      - value: '1'
+        newvalue: Expansion
+    - uuid: 875a5dd1061b425ea1b6ccf4e7b865c3
+      name: Inspur FC Port Status
+      mappings:
+      - value: '-1'
+        newvalue: Unknown
+      - value: '0'
+        newvalue: Active
+      - value: '1'
+        newvalue: Inactive
+      - value: '2'
+        newvalue: Inactive Configured
+      - value: '3'
+        newvalue: Inactive Unconfigured
+    - uuid: a86fdd8f8b8e4795a61f19fa20b56fae
+      name: Inspur iSCSI Link State
+      mappings:
+      - value: '-1'
+        newvalue: Unknown
+      - value: '0'
+        newvalue: Active
+      - value: '1'
+        newvalue: Inactive
+    - uuid: a43914eff1624591abdde48429d596bb
+      name: Inspur iSCSI Port State
+      mappings:
+      - value: '-1'
+        newvalue: Unknown
+      - value: '0'
+        newvalue: Online
+      - value: '1'
+        newvalue: Offline
+      - value: '2'
+        newvalue: Unconfigured
+      - value: '3'
+        newvalue: Configured
+    - uuid: a20893a06b0246f7b11ae5de81c304c4
+      name: Inspur Online/Degraded/Offline Status
+      mappings:
+      - value: '-1'
+        newvalue: Unknown
+      - value: '0'
+        newvalue: Online
+      - value: '1'
+        newvalue: Degraded
+      - value: '2'
+        newvalue: Offline
+    - uuid: 50d5459159c3420b901ebb505b178ada
+      name: Inspur PSU Fail Flag (0=on/Fail,1=off/OK)
+      mappings:
+      - value: '0'
+        newvalue: Fail (on)
+      - value: '1'
+        newvalue: OK (off)
+    - uuid: c688f373ffec4d8e8a877096d0e1ef27
+      name: Inspur SAS Port Status
+      mappings:
+      - value: '-1'
+        newvalue: Unknown
+      - value: '0'
+        newvalue: Online
+      - value: '1'
+        newvalue: Offline
+      - value: '2'
+        newvalue: Offline Unconfigured
+      - value: '3'
+        newvalue: Degraded
+      - value: '4'
+        newvalue: Excluded

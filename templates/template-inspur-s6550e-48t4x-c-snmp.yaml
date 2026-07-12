@@ -1,0 +1,436 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-07-12T04:16:05Z'
+  groups:
+  - uuid: 36bff6c29af64692839d077febfc7079
+    name: Templates/Network devices
+  templates:
+  - uuid: 167a2324b78f4b159d10b74d46c4c398
+    template: Template Inspur S6550E-48T4X-C SNMP
+    name: 浪潮 S6550E-48T4X-C 交换机 SNMP模板
+    description: '针对浪潮(IEIT/INOP) S6550E-48T4X-C交换机的SNMP监控模板。
+
+      企业私有OID分支: .1.3.6.1.4.1.48797 (INOP软件, 非H3C/锐捷体系)
+
+      标准接口流量走IF-MIB自动发现; CPU/内存/风扇/温度/电源走私有MIB, 已通过CLI(show environment/show power)交叉验证OID正确性。
+
+      本模板假设固定2风扇/2电源/2温度传感器(该型号为固定配置交换机, 非模块化机箱), 未做LLD自动发现。
+
+      Created 2026-07.
+
+      '
+    groups:
+    - name: Templates/Network devices
+    items:
+    - uuid: 4b791e9edf044992a6f0f79ed6cd1a67
+      name: 风扇1转速
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48797.37.1.1.1.1.9.1.1.1
+      key: sensor.fan.speed[1]
+      delay: 2m
+      history: 7d
+      trends: 90d
+      units: '%'
+      description: 风扇1转速百分比, 对应CLI show environment FanIndex 1-1
+      tags:
+      - tag: Application
+        value: 风扇
+      triggers:
+      - uuid: 81009e228dce4a688a36b8497374ad14
+        expression: last(/Template Inspur S6550E-48T4X-C SNMP/sensor.fan.speed[1])=0
+        name: 风扇1停转或读数异常
+        priority: HIGH
+    - uuid: 541fc00886b0434c95fc3fd6ef96adbd
+      name: 风扇2转速
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48797.37.1.1.1.1.9.1.1.2
+      key: sensor.fan.speed[2]
+      delay: 2m
+      history: 7d
+      trends: 90d
+      units: '%'
+      description: 风扇2转速百分比, 对应CLI show environment FanIndex 2-1
+      tags:
+      - tag: Application
+        value: 风扇
+      triggers:
+      - uuid: 4b03abd58cc04ecb81b861f7f23ae4aa
+        expression: last(/Template Inspur S6550E-48T4X-C SNMP/sensor.fan.speed[2])=0
+        name: 风扇2停转或读数异常
+        priority: HIGH
+    - uuid: 3e698a7c6a9e4efbbd3113efedd8ebf6
+      name: 电源1告警位
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48797.37.1.2.1.7.1
+      key: sensor.psu.alert[1]
+      delay: 2m
+      history: 7d
+      trends: '0'
+      description: 电源1 Alert列, 1=无告警(NO), 对应CLI show power Alert列
+      tags:
+      - tag: Application
+        value: 电源
+      triggers:
+      - uuid: 5021fb8ae1404b3f9d21ed53bfbea80d
+        expression: last(/Template Inspur S6550E-48T4X-C SNMP/sensor.psu.alert[1])<>1
+        name: 电源1触发告警位
+        priority: HIGH
+    - uuid: 8753291fea2d47d880222139cee1dd72
+      name: 电源2告警位
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48797.37.1.2.1.7.2
+      key: sensor.psu.alert[2]
+      delay: 2m
+      history: 7d
+      trends: '0'
+      description: 电源2 Alert列, 1=无告警(NO)
+      tags:
+      - tag: Application
+        value: 电源
+      triggers:
+      - uuid: 5ba5c3566d6943e899a070e22bdbb9fc
+        expression: last(/Template Inspur S6550E-48T4X-C SNMP/sensor.psu.alert[2])<>1
+        name: 电源2触发告警位
+        priority: HIGH
+    - uuid: 0904bcacaade4056b19f2245d5870864
+      name: 电源1状态
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48797.37.1.2.1.2.1
+      key: sensor.psu.status[1]
+      delay: 2m
+      history: 7d
+      trends: '0'
+      description: 电源1在位/状态, 1=正常(PRESENT), 对应CLI show power Index 1
+      valuemap:
+        name: PSU状态
+      tags:
+      - tag: Application
+        value: 电源
+      triggers:
+      - uuid: e00bddffd0914bd180dedc9c04d5f8c4
+        expression: last(/Template Inspur S6550E-48T4X-C SNMP/sensor.psu.status[1])<>1
+        name: 电源1状态异常
+        priority: HIGH
+    - uuid: 3def0373c27e4383af1f86aeee5e1564
+      name: 电源2状态
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48797.37.1.2.1.2.2
+      key: sensor.psu.status[2]
+      delay: 2m
+      history: 7d
+      trends: '0'
+      description: 电源2在位/状态, 1=正常(PRESENT), 对应CLI show power Index 2
+      valuemap:
+        name: PSU状态
+      tags:
+      - tag: Application
+        value: 电源
+      triggers:
+      - uuid: 0996dc8ffcda4b55a413a1992f1c1222
+        expression: last(/Template Inspur S6550E-48T4X-C SNMP/sensor.psu.status[2])<>1
+        name: 电源2状态异常
+        priority: HIGH
+    - uuid: 8aba51e9e2ff42b684c3f66d4aff32e3
+      name: 温度-CPU周围
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48797.37.1.3.1.4.1.1.1
+      key: sensor.temp.value[cpu]
+      delay: 2m
+      history: 7d
+      trends: 90d
+      value_type: FLOAT
+      units: °C
+      description: '传感器1: AROUND_CPU, CLI show environment Index 1'
+      tags:
+      - tag: Application
+        value: 温度
+      triggers:
+      - uuid: ea46ab1dddef4905823d636c9d4b9994
+        expression: min(/Template Inspur S6550E-48T4X-C SNMP/sensor.temp.value[cpu],5m)>80
+        name: CPU周围温度超过Critical阈值(80℃)
+        priority: HIGH
+      - uuid: 793bbef2cf1c4bf5abb6a52bcbe83158
+        expression: min(/Template Inspur S6550E-48T4X-C SNMP/sensor.temp.value[cpu],5m)>55
+        name: CPU周围温度超过Upper_alarm阈值(55℃)
+        priority: WARNING
+    - uuid: fedbcfeb6b9d4f62bf8964219765d3e8
+      name: 温度-交换芯片
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48797.37.1.3.1.4.1.1.2
+      key: sensor.temp.value[switch_chip]
+      delay: 2m
+      history: 7d
+      trends: 90d
+      value_type: FLOAT
+      units: °C
+      description: '传感器2: SWITCH_CHIP, CLI show environment Index 2'
+      tags:
+      - tag: Application
+        value: 温度
+      triggers:
+      - uuid: 617ea5d1c237454f93b70e6f02d6a3b0
+        expression: min(/Template Inspur S6550E-48T4X-C SNMP/sensor.temp.value[switch_chip],5m)>125
+        name: 交换芯片温度超过Critical阈值(125℃)
+        priority: HIGH
+      - uuid: 56b1f65fa69844bd8152ed9158eddd16
+        expression: min(/Template Inspur S6550E-48T4X-C SNMP/sensor.temp.value[switch_chip],5m)>105
+        name: 交换芯片温度超过Upper_alarm阈值(105℃)
+        priority: WARNING
+    - uuid: 25659e5946c3453a8619e911534335ec
+      name: CPU利用率
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48797.1.2.11.0
+      key: system.cpu.util
+      history: 7d
+      trends: 90d
+      value_type: FLOAT
+      units: '%'
+      description: 私有MIB CPU利用率, 已通过CLI/结构比对确认
+      tags:
+      - tag: Application
+        value: CPU
+      triggers:
+      - uuid: 3acd9c01fd1246dd8ff1c1e0a3f84eed
+        expression: min(/Template Inspur S6550E-48T4X-C SNMP/system.cpu.util,5m)>95
+        name: CPU利用率严重过高 (>95% 持续5分钟)
+        priority: HIGH
+      - uuid: d38b2590427446c891137707228a4f09
+        expression: min(/Template Inspur S6550E-48T4X-C SNMP/system.cpu.util,5m)>85
+        name: CPU利用率过高 (>85% 持续5分钟)
+        status: DISABLED
+        priority: WARNING
+    - uuid: 7fe65ee959cc4a1e9815fd9ff3174bd0
+      name: 系统描述
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.2.1.1.1.0
+      key: system.descr
+      delay: 1h
+      history: 7d
+      trends: '0'
+      value_type: CHAR
+      description: sysDescr - 软件版本字符串
+      tags:
+      - tag: Application
+        value: 系统信息
+    - uuid: 00aa700a7a224e6887ea1fc7c4f45a75
+      name: 软件版本
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48797.1.3.5.0
+      key: system.sw.version
+      delay: 1h
+      history: 7d
+      trends: '0'
+      value_type: CHAR
+      description: INOP软件版本, 私有MIB
+      tags:
+      - tag: Application
+        value: 系统信息
+    - uuid: 75800350a53e4935a7c40c0a1b897728
+      name: 系统运行时间
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.2.1.1.3.0
+      key: system.uptime
+      delay: 3m
+      history: 7d
+      value_type: FLOAT
+      units: uptime
+      description: sysUpTime原始值为TimeTicks(厘秒), 乘以0.01换算成秒后再按uptime格式显示
+      preprocessing:
+      - type: MULTIPLIER
+        parameters:
+        - '0.01'
+      tags:
+      - tag: Application
+        value: 系统信息
+    - uuid: 88576c4d29404565ac7e8c53eb7e2519
+      name: 内存空闲
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48797.1.1.12.0
+      key: vm.memory.free
+      history: 7d
+      trends: 90d
+      units: KB
+      description: 私有MIB空闲内存(KB)
+      tags:
+      - tag: Application
+        value: 内存
+    - uuid: a057935040124474887b504f8468f835
+      name: 内存总量
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48797.1.1.5.0
+      key: vm.memory.total
+      delay: 1h
+      history: 7d
+      trends: 90d
+      units: KB
+      description: 私有MIB内存总量(KB)
+      tags:
+      - tag: Application
+        value: 内存
+    - uuid: 4bb644c4a41e4e1883169a6b96e287e0
+      name: 内存已用
+      type: SNMP_AGENT
+      snmp_oid: 1.3.6.1.4.1.48797.1.1.11.0
+      key: vm.memory.used
+      history: 7d
+      trends: 90d
+      units: KB
+      description: 私有MIB已用内存(KB)
+      tags:
+      - tag: Application
+        value: 内存
+    - uuid: 228911ea235a452facc82d13531c9280
+      name: 内存使用率
+      type: CALCULATED
+      key: vm.memory.util
+      history: 7d
+      trends: 90d
+      value_type: FLOAT
+      units: '%'
+      params: (last(/Template Inspur S6550E-48T4X-C SNMP/vm.memory.used)/last(/Template
+        Inspur S6550E-48T4X-C SNMP/vm.memory.total))*100
+      description: '计算型监控项: 已用/总量*100'
+      tags:
+      - tag: Application
+        value: 内存
+      triggers:
+      - uuid: 18f32c97301c4bcb971346e204257f9a
+        expression: min(/Template Inspur S6550E-48T4X-C SNMP/vm.memory.util,5m)>85
+        name: 内存使用率过高 (>85% 持续5分钟)
+        status: DISABLED
+        priority: WARNING
+    discovery_rules:
+    - uuid: ec11eb78094e45aeae4b3a72a62eec97
+      name: 网络接口发现
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#IFDESCR},1.3.6.1.2.1.2.2.1.2,{#IFOPERSTATUS},1.3.6.1.2.1.2.2.1.8,{#IFADMINSTATUS},1.3.6.1.2.1.2.2.1.7]
+      key: net.if.discovery
+      delay: 1h
+      filter:
+        evaltype: AND
+        conditions:
+        - macro: '{#IFDESCR}'
+          value: ^(eth-0-|agg)
+          formulaid: A
+      description: 基于标准IF-MIB自动发现物理口(eth-0-x)和聚合口(agg), 排除vlan接口
+      item_prototypes:
+      - uuid: 9ac1c7012de94d2e82da9e1152cdf7ef
+        name: '接口 {#IFDESCR}: 入方向错误包'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.2.1.2.2.1.14.{#SNMPINDEX}
+        key: net.if.errors.in[{#SNMPINDEX}]
+        history: 7d
+        trends: 90d
+        description: ifInErrors
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+          parameters:
+          - ''
+        tags:
+        - tag: Application
+          value: 接口
+      - uuid: 164ff8a30fc645029c303d711df02e9b
+        name: '接口 {#IFDESCR}: 出方向错误包'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.2.1.2.2.1.20.{#SNMPINDEX}
+        key: net.if.errors.out[{#SNMPINDEX}]
+        history: 7d
+        trends: 90d
+        description: ifOutErrors
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+          parameters:
+          - ''
+        tags:
+        - tag: Application
+          value: 接口
+      - uuid: a247fa040d674cfbbfc97f2427e7502f
+        name: '接口 {#IFDESCR}: 入方向流量'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.2.1.31.1.1.1.6.{#SNMPINDEX}
+        key: net.if.in[{#SNMPINDEX}]
+        history: 7d
+        trends: 90d
+        value_type: FLOAT
+        units: bps
+        description: ifHCInOctets 64位计数器, 已换算为bps
+        preprocessing:
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        - type: CHANGE_PER_SECOND
+          parameters:
+          - ''
+        tags:
+        - tag: Application
+          value: 接口
+      - uuid: d64be9ccb0ff453ea84cb12fee0df060
+        name: '接口 {#IFDESCR}: 出方向流量'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.2.1.31.1.1.1.10.{#SNMPINDEX}
+        key: net.if.out[{#SNMPINDEX}]
+        history: 7d
+        trends: 90d
+        value_type: FLOAT
+        units: bps
+        description: ifHCOutOctets 64位计数器, 已换算为bps
+        preprocessing:
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        - type: CHANGE_PER_SECOND
+          parameters:
+          - ''
+        tags:
+        - tag: Application
+          value: 接口
+      - uuid: be7e7481e1ad47669276924cadbdeb06
+        name: '接口 {#IFDESCR}: 运行状态'
+        type: SNMP_AGENT
+        snmp_oid: 1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}
+        key: net.if.status[{#SNMPINDEX}]
+        history: 7d
+        trends: '0'
+        description: ifOperStatus, 1=up 2=down
+        valuemap:
+          name: ifOperStatus
+        tags:
+        - tag: Application
+          value: 接口
+        trigger_prototypes:
+        - uuid: 903854d124464798b9963085b76aa377
+          expression: last(/Template Inspur S6550E-48T4X-C SNMP/net.if.status[{#SNMPINDEX}])=2
+            and last(/Template Inspur S6550E-48T4X-C SNMP/net.if.status[{#SNMPINDEX}],#1)<>last(/Template
+            Inspur S6550E-48T4X-C SNMP/net.if.status[{#SNMPINDEX}],#2)
+          name: 接口 {#IFDESCR} 链路DOWN
+          priority: AVERAGE
+          manual_close: 'YES'
+    macros:
+    - macro: '{$SNMP_COMMUNITY}'
+      value: public
+      description: 替换为实际的SNMPv2c只读团体字
+    valuemaps:
+    - uuid: 501d02332e944e3f97b38e3d8b5d85d5
+      name: ifOperStatus
+      mappings:
+      - value: '1'
+        newvalue: up
+      - value: '2'
+        newvalue: down
+      - value: '3'
+        newvalue: testing
+      - value: '4'
+        newvalue: unknown
+      - value: '5'
+        newvalue: dormant
+      - value: '6'
+        newvalue: notPresent
+      - value: '7'
+        newvalue: lowerLayerDown
+    - uuid: 68536a5dae7b4f89aa43f0ab27a61ec2
+      name: PSU状态
+      mappings:
+      - value: '0'
+        newvalue: 异常/不在位
+      - value: '1'
+        newvalue: 正常(PRESENT)

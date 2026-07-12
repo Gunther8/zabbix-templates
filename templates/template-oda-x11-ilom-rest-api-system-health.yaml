@@ -1,0 +1,839 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-07-12T04:13:04Z'
+  groups:
+  - uuid: 8e932b5354fe4dcd9833912fa9da2743
+    name: Templates/Hardware
+  templates:
+  - uuid: d999a25842ca452b8eb319f9fe18d49f
+    template: Template ODA X11 iLOM REST API - System Health
+    name: Template ODA X11 iLOM REST API - System Health
+    description: 'Oracle ODA X11 iLOM system/power/memory/storage/networking/CPU health
+
+      via Oracle''s proprietary ILOM Web Service REST API (/rest/v1/, NOT
+
+      DMTF Redfish). Auth: HTTP Basic with a dedicated read-only ILOM user.
+
+      Companion template to "Template ODA X11 iLOM REST API - Cooling"
+
+      (fans + inlet/exhaust temperature) - link both to the same host.
+
+      Mirrors the coverage of the existing oda_check.py ILOM-CLI inspection
+
+      script (System/CPU/Memory/Power/Storage/Networking/Open_Problems/SP)
+
+      but as continuously-polled Zabbix items with alerting, instead of a
+
+      once-daily HTML report.
+
+      Data source verified 2026-07-08 against ODA X11 HA node 10.1.251.204
+
+      (ILOM 5.1.4.23, model ORACLE SERVER E6-2L).
+
+      Most valuable single item: ilom.openproblems.count - mirrors ILOM''s
+
+      own aggregated fault detection (same source as "Open Problems" shown
+
+      in the ILOM web UI and in oda_check.py''s cmd_open_problems).
+
+      '
+    groups:
+    - name: Templates/Hardware
+    items:
+    - uuid: c729b8c3c92a477aae14a44104282fab
+      name: CPU 0 health
+      type: DEPENDENT
+      key: ilom.cpu.health[0]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Processors/CPUs/CPU_0')].health.first()
+      master_item:
+        key: ilom.cpus.raw
+      tags:
+      - tag: component
+        value: cpu
+      triggers:
+      - uuid: 34598135e1c9431cacd030cdd7b1fc48
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.cpu.health[0],,"ne","OK")=1
+        name: ODA CPU 0 health is not OK
+        priority: DISASTER
+    - uuid: 189451fed1cb407db2ba67103b528470
+      name: CPU 1 health
+      type: DEPENDENT
+      key: ilom.cpu.health[1]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Processors/CPUs/CPU_1')].health.first()
+      master_item:
+        key: ilom.cpus.raw
+      tags:
+      - tag: component
+        value: cpu
+      triggers:
+      - uuid: 430f604c5ef44864a31567aa1ce2a190
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.cpu.health[1],,"ne","OK")=1
+        name: ODA CPU 1 health is not OK
+        priority: DISASTER
+    - uuid: aa24f6ae482d4ff3a7c499ce43c3ffef
+      name: 'ILOM: CPUs collection (raw)'
+      type: HTTP_AGENT
+      key: ilom.cpus.raw
+      delay: 15m
+      history: 1h
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$ILOM_USER}'
+      password: '{$ILOM_PASSWORD}'
+      description: 'Master item - single request returns both CPUs (note: temperature
+        field not populated by this firmware)'
+      timeout: 15s
+      url: https://{$ILOM_IP}/rest/v1/System/Processors/CPUs/collection
+    - uuid: 17c640d3cc9440efaa4f222ab2d04a34
+      name: DIMM 3 health
+      type: DEPENDENT
+      key: ilom.dimm.health[3]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Memory/DIMMs/DIMM_3')].health.first()
+      master_item:
+        key: ilom.dimms.raw
+      tags:
+      - tag: component
+        value: memory
+      triggers:
+      - uuid: 01fab3244d534ac58bc46113caa49ee2
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.dimm.health[3],,"ne","OK")=1
+        name: ODA DIMM 3 health is not OK
+        priority: HIGH
+    - uuid: 7887e7ebb0fc4bea8e9b3084d2d06cca
+      name: DIMM 5 health
+      type: DEPENDENT
+      key: ilom.dimm.health[5]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Memory/DIMMs/DIMM_5')].health.first()
+      master_item:
+        key: ilom.dimms.raw
+      tags:
+      - tag: component
+        value: memory
+      triggers:
+      - uuid: d607ef725f724500a4ac8e014e56681c
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.dimm.health[5],,"ne","OK")=1
+        name: ODA DIMM 5 health is not OK
+        priority: HIGH
+    - uuid: 511e4abf971b4126a489a1240b2f19e8
+      name: DIMM 6 health
+      type: DEPENDENT
+      key: ilom.dimm.health[6]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Memory/DIMMs/DIMM_6')].health.first()
+      master_item:
+        key: ilom.dimms.raw
+      tags:
+      - tag: component
+        value: memory
+      triggers:
+      - uuid: 3f6f2040dc334432b09d566a1e7ceb87
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.dimm.health[6],,"ne","OK")=1
+        name: ODA DIMM 6 health is not OK
+        priority: HIGH
+    - uuid: d5d47c39c8944cec8c0c18d4f7999c08
+      name: DIMM 8 health
+      type: DEPENDENT
+      key: ilom.dimm.health[8]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Memory/DIMMs/DIMM_8')].health.first()
+      master_item:
+        key: ilom.dimms.raw
+      tags:
+      - tag: component
+        value: memory
+      triggers:
+      - uuid: 6a911ffd8b5b4582b3be9312fdc30cb6
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.dimm.health[8],,"ne","OK")=1
+        name: ODA DIMM 8 health is not OK
+        priority: HIGH
+    - uuid: 8a81e5f6a656461ba4020b0818eb0914
+      name: DIMM 15 health
+      type: DEPENDENT
+      key: ilom.dimm.health[15]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Memory/DIMMs/DIMM_15')].health.first()
+      master_item:
+        key: ilom.dimms.raw
+      tags:
+      - tag: component
+        value: memory
+      triggers:
+      - uuid: 1af2ed54c9f24421b17df0b1c3a88746
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.dimm.health[15],,"ne","OK")=1
+        name: ODA DIMM 15 health is not OK
+        priority: HIGH
+    - uuid: 4925a93f9369489b965b398b4d9cbd2e
+      name: DIMM 17 health
+      type: DEPENDENT
+      key: ilom.dimm.health[17]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Memory/DIMMs/DIMM_17')].health.first()
+      master_item:
+        key: ilom.dimms.raw
+      tags:
+      - tag: component
+        value: memory
+      triggers:
+      - uuid: 56f2194b97ed4e8f801c81af22f5b20b
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.dimm.health[17],,"ne","OK")=1
+        name: ODA DIMM 17 health is not OK
+        priority: HIGH
+    - uuid: 9a4beea80320465ca90a3034984559ac
+      name: DIMM 18 health
+      type: DEPENDENT
+      key: ilom.dimm.health[18]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Memory/DIMMs/DIMM_18')].health.first()
+      master_item:
+        key: ilom.dimms.raw
+      tags:
+      - tag: component
+        value: memory
+      triggers:
+      - uuid: 25fa96a0b9ee4d27bf16f41e28e2d61b
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.dimm.health[18],,"ne","OK")=1
+        name: ODA DIMM 18 health is not OK
+        priority: HIGH
+    - uuid: f0218f094e6242c88912bd2b075422d0
+      name: DIMM 20 health
+      type: DEPENDENT
+      key: ilom.dimm.health[20]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Memory/DIMMs/DIMM_20')].health.first()
+      master_item:
+        key: ilom.dimms.raw
+      tags:
+      - tag: component
+        value: memory
+      triggers:
+      - uuid: 19c4b81eea40487eb69485730469e414
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.dimm.health[20],,"ne","OK")=1
+        name: ODA DIMM 20 health is not OK
+        priority: HIGH
+    - uuid: 544ce852a29b4e9594b97cf298a551be
+      name: 'ILOM: DIMMs collection (raw)'
+      type: HTTP_AGENT
+      key: ilom.dimms.raw
+      delay: 30m
+      history: 1h
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$ILOM_USER}'
+      password: '{$ILOM_PASSWORD}'
+      description: Master item - single request returns all installed DIMMs
+      timeout: 15s
+      url: https://{$ILOM_IP}/rest/v1/System/Memory/DIMMs/collection
+    - uuid: 4278feb2d8f44d97941d1ad3bc1cc46c
+      name: Disk 4 health
+      type: DEPENDENT
+      key: ilom.disk.health[4]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Storage/Disks/Disk_4')].health.first()
+      master_item:
+        key: ilom.disks.raw
+      tags:
+      - tag: component
+        value: storage
+      triggers:
+      - uuid: 95937f9be0514e349e5d074133e94d73
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.disk.health[4],,"ne","OK")=1
+        name: ODA Disk 4 health is not OK
+        priority: HIGH
+    - uuid: dab8cea8ee034dbca134e35100c4928e
+      name: Disk 5 health
+      type: DEPENDENT
+      key: ilom.disk.health[5]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Storage/Disks/Disk_5')].health.first()
+      master_item:
+        key: ilom.disks.raw
+      tags:
+      - tag: component
+        value: storage
+      triggers:
+      - uuid: b048e8d3c0094d39964ba7418de49525
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.disk.health[5],,"ne","OK")=1
+        name: ODA Disk 5 health is not OK
+        priority: HIGH
+    - uuid: caf67d3d61ac4c02abc13dbec800cd25
+      name: 'ILOM: Disks collection (raw)'
+      type: HTTP_AGENT
+      key: ilom.disks.raw
+      delay: 15m
+      history: 1h
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$ILOM_USER}'
+      password: '{$ILOM_PASSWORD}'
+      description: Master item - single request returns all disks
+      timeout: 15s
+      url: https://{$ILOM_IP}/rest/v1/System/Storage/Disks/collection
+    - uuid: 9ec4f0fb45654e08a3d540dc316e87c0
+      name: Memory subsystem health
+      type: DEPENDENT
+      key: ilom.memory.health
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.health
+      master_item:
+        key: ilom.memory.raw
+      triggers:
+      - uuid: a48d8a3eccef42268eae6d8975cedde0
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.memory.health,,"ne","OK")=1
+        name: ODA Memory subsystem health is not OK
+        priority: HIGH
+    - uuid: 29d3020c139749efa73d521900a5c6ae
+      name: Installed DIMMs count
+      type: DEPENDENT
+      key: ilom.memory.installed_dimms
+      delay: '0'
+      trends: '0'
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.installed_dimms
+      master_item:
+        key: ilom.memory.raw
+    - uuid: 1d9cf5a62ec7406580b30b23496c8142
+      name: 'ILOM: Memory summary (raw)'
+      type: HTTP_AGENT
+      key: ilom.memory.raw
+      delay: 30m
+      history: 1h
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$ILOM_USER}'
+      password: '{$ILOM_PASSWORD}'
+      description: Master item - memory subsystem health and DIMM count
+      timeout: 15s
+      url: https://{$ILOM_IP}/rest/v1/System/Memory
+    - uuid: 90a6764000d6437a98006a9b3801fcdc
+      name: Networking subsystem health
+      type: DEPENDENT
+      key: ilom.networking.health
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.health
+      master_item:
+        key: ilom.networking.raw
+      triggers:
+      - uuid: 543e2269850c45f9a17380fac2393696
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.networking.health,,"ne","OK")=1
+        name: ODA Networking subsystem health is not OK
+        priority: AVERAGE
+    - uuid: f27f55291ca14ffcba68df195d54e949
+      name: 'ILOM: Networking summary (raw)'
+      type: HTTP_AGENT
+      key: ilom.networking.raw
+      delay: 15m
+      history: 1h
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$ILOM_USER}'
+      password: '{$ILOM_PASSWORD}'
+      description: Master item - networking subsystem health
+      timeout: 15s
+      url: https://{$ILOM_IP}/rest/v1/System/Networking
+    - uuid: 82942c26110c4e89b86878cb753bb632
+      name: NIC 0 health
+      type: DEPENDENT
+      key: ilom.nic.health[0]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Networking/Ethernet_NICs/Ethernet_NIC_0')].health.first()
+      master_item:
+        key: ilom.nics.raw
+      tags:
+      - tag: component
+        value: network
+      triggers:
+      - uuid: 68d7f197c9394b0d8b18efeeea502c83
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.nic.health[0],,"ne","OK")=1
+        name: ODA NIC 0 health is not OK
+        priority: AVERAGE
+    - uuid: 13cd290ac91e4ca1845e60286f899c30
+      name: 'ILOM: Ethernet NICs collection (raw)'
+      type: HTTP_AGENT
+      key: ilom.nics.raw
+      delay: 15m
+      history: 1h
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$ILOM_USER}'
+      password: '{$ILOM_PASSWORD}'
+      description: Master item - single request returns all onboard NICs
+      timeout: 15s
+      url: https://{$ILOM_IP}/rest/v1/System/Networking/Ethernet_NICs/collection
+    - uuid: 32ebfa3dd12e40eab42951d525bab2ca
+      name: Open problems count
+      type: DEPENDENT
+      key: ilom.openproblems.count
+      delay: '0'
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.OpenProblems.length()
+      master_item:
+        key: ilom.openproblems.raw
+      triggers:
+      - uuid: 371e7f704d734c1eb1ab785d499ce97d
+        expression: last(/Template ODA X11 iLOM REST API - System Health/ilom.openproblems.count)>0
+        name: ODA has {ITEM.LASTVALUE} open hardware problem(s) - check ILOM Open
+          Problems
+        priority: DISASTER
+    - uuid: 32f1a4a3164b4af3a6c282d283deaf8c
+      name: 'ILOM: Open problems (raw)'
+      type: HTTP_AGENT
+      key: ilom.openproblems.raw
+      delay: 2m
+      history: 1h
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$ILOM_USER}'
+      password: '{$ILOM_PASSWORD}'
+      description: Master item - list of currently open hardware faults reported by
+        ILOM
+      timeout: 15s
+      url: https://{$ILOM_IP}/rest/v1/System/Open_Problems
+    - uuid: eec4f45d64294913b016c4e7a5806361
+      name: Power actual consumption
+      type: DEPENDENT
+      key: ilom.power.consumption
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: FLOAT
+      units: W
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.actual_power_consumption
+      master_item:
+        key: ilom.power.raw
+    - uuid: af3cc21f932647708f777a4e3543b5df
+      name: Power subsystem health
+      type: DEPENDENT
+      key: ilom.power.health
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.health
+      master_item:
+        key: ilom.power.raw
+      triggers:
+      - uuid: 2eb94674da344e489be90928d69c98d9
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.power.health,,"ne","OK")=1
+        name: ODA Power subsystem health is not OK
+        priority: DISASTER
+    - uuid: ea2fb9c46bc4429d80fdd2a2b9d78d4c
+      name: Power max permitted
+      type: DEPENDENT
+      key: ilom.power.max_permitted
+      delay: '0'
+      trends: '0'
+      value_type: FLOAT
+      units: W
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.max_permitted_power
+      master_item:
+        key: ilom.power.raw
+    - uuid: 80dd30b41ee6485385c1ab514f55c9b2
+      name: 'ILOM: Power summary (raw)'
+      type: HTTP_AGENT
+      key: ilom.power.raw
+      delay: 5m
+      history: 1h
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$ILOM_USER}'
+      password: '{$ILOM_PASSWORD}'
+      description: Master item - power subsystem health and consumption
+      timeout: 15s
+      url: https://{$ILOM_IP}/rest/v1/System/Power
+    - uuid: 7ce76600144b4676960537dbb3ffea20
+      name: PSU 0 health
+      type: DEPENDENT
+      key: ilom.psu.health[0]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Power/Power_Supplies/Power_Supply_0')].health.first()
+      master_item:
+        key: ilom.psus.raw
+      tags:
+      - tag: component
+        value: power
+      triggers:
+      - uuid: f1d8e6d76fab4114964001659e7daebe
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.psu.health[0],,"ne","OK")=1
+        name: ODA PSU 0 health is not OK
+        priority: DISASTER
+    - uuid: bed52525876a4405965fe3dedfa9f95f
+      name: PSU 1 health
+      type: DEPENDENT
+      key: ilom.psu.health[1]
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Power/Power_Supplies/Power_Supply_1')].health.first()
+      master_item:
+        key: ilom.psus.raw
+      tags:
+      - tag: component
+        value: power
+      triggers:
+      - uuid: 9b1962d00a874b348dab9dfac5640095
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.psu.health[1],,"ne","OK")=1
+        name: ODA PSU 1 health is not OK
+        priority: DISASTER
+    - uuid: 2c7fdd4cb28b40369975f3ea2c45631e
+      name: PSU 0 output power
+      type: DEPENDENT
+      key: ilom.psu.output_power[0]
+      delay: '0'
+      value_type: FLOAT
+      units: W
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Power/Power_Supplies/Power_Supply_0')].output_power.first()
+      master_item:
+        key: ilom.psus.raw
+      tags:
+      - tag: component
+        value: power
+    - uuid: 225320f87608473098a6a9dc3b3f22fa
+      name: PSU 1 output power
+      type: DEPENDENT
+      key: ilom.psu.output_power[1]
+      delay: '0'
+      value_type: FLOAT
+      units: W
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.Collection[?(@.Target=='/rest/v1/System/Power/Power_Supplies/Power_Supply_1')].output_power.first()
+      master_item:
+        key: ilom.psus.raw
+      tags:
+      - tag: component
+        value: power
+    - uuid: ae7a496f406140ec9ab378921a7f25b7
+      name: 'ILOM: Power supplies collection (raw)'
+      type: HTTP_AGENT
+      key: ilom.psus.raw
+      delay: 5m
+      history: 1h
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$ILOM_USER}'
+      password: '{$ILOM_PASSWORD}'
+      description: Master item - single request returns all PSUs
+      timeout: 15s
+      url: https://{$ILOM_IP}/rest/v1/System/Power/Power_Supplies/collection
+    - uuid: 833db7bd700149babd91c87cd2b2af38
+      name: SP system description
+      type: DEPENDENT
+      key: ilom.sp.description
+      delay: '0'
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.system_description
+      master_item:
+        key: ilom.sp.raw
+    - uuid: 3af80b4fbb364f269fadccb91941ea7e
+      name: SP hostname
+      type: DEPENDENT
+      key: ilom.sp.hostname
+      delay: '0'
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.hostname
+      master_item:
+        key: ilom.sp.raw
+    - uuid: 79f581cef44945588084d4435ec758ae
+      name: 'ILOM: SP summary (raw)'
+      type: HTTP_AGENT
+      key: ilom.sp.raw
+      delay: 1h
+      history: 1h
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$ILOM_USER}'
+      password: '{$ILOM_PASSWORD}'
+      description: Master item - service processor identification (low-value inventory
+        info)
+      timeout: 15s
+      url: https://{$ILOM_IP}/rest/v1/SP
+    - uuid: c56c112270c24328a721ffeca755caca
+      name: Storage subsystem health
+      type: DEPENDENT
+      key: ilom.storage.health
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.health
+      master_item:
+        key: ilom.storage.raw
+      triggers:
+      - uuid: eb61b528af4d4140bfeed736d6d5aae7
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.storage.health,,"ne","OK")=1
+        name: ODA Storage subsystem health is not OK
+        priority: HIGH
+    - uuid: 8949e273271c451686bdca4e45b88bba
+      name: Installed disks count
+      type: DEPENDENT
+      key: ilom.storage.installed_disks
+      delay: '0'
+      trends: '0'
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.installed_disks
+      master_item:
+        key: ilom.storage.raw
+    - uuid: 429ee6978a6e4646bd32456149eb099b
+      name: 'ILOM: Storage summary (raw)'
+      type: HTTP_AGENT
+      key: ilom.storage.raw
+      delay: 15m
+      history: 1h
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$ILOM_USER}'
+      password: '{$ILOM_PASSWORD}'
+      description: Master item - storage subsystem health
+      timeout: 15s
+      url: https://{$ILOM_IP}/rest/v1/System/Storage
+    - uuid: 69bf8f1e47854f908268c28fece5fb29
+      name: System firmware version (ILOM)
+      type: DEPENDENT
+      key: ilom.system.fw_version
+      delay: '0'
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.system_fw_version
+      master_item:
+        key: ilom.system.raw
+    - uuid: c7ce33efb1ff4fa1908d5f3640813286
+      name: System health
+      type: DEPENDENT
+      key: ilom.system.health
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.health
+      master_item:
+        key: ilom.system.raw
+      triggers:
+      - uuid: fe2b0a1227a54665ae79104c5a04d8f2
+        expression: find(/Template ODA X11 iLOM REST API - System Health/ilom.system.health,,"ne","OK")=1
+        name: ODA System health is not OK
+        priority: DISASTER
+    - uuid: ad3419724e9b48c6a3462d53acbb1d2d
+      name: System open problems count
+      type: DEPENDENT
+      key: ilom.system.open_problems_count
+      delay: '0'
+      history: 30d
+      trends: '0'
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.open_problems_count
+      master_item:
+        key: ilom.system.raw
+      triggers:
+      - uuid: 3e1c0874ba994e3384d664e6f73836de
+        expression: last(/Template ODA X11 iLOM REST API - System Health/ilom.system.open_problems_count)>0
+        name: ODA has {ITEM.LASTVALUE} open problem(s) in ILOM
+        priority: DISASTER
+    - uuid: 15079c341e254e3da60e8857902e76d1
+      name: System actual power consumption
+      type: DEPENDENT
+      key: ilom.system.power_consumption
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: FLOAT
+      units: W
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.actual_power_consumption
+      master_item:
+        key: ilom.system.raw
+    - uuid: 9eef3573c5464242849542b5bfdc6e6c
+      name: System power state
+      type: DEPENDENT
+      key: ilom.system.power_state
+      delay: '0'
+      history: 30d
+      trends: '0'
+      value_type: CHAR
+      preprocessing:
+      - type: JSONPATH
+        parameters:
+        - $.power_state
+      master_item:
+        key: ilom.system.raw
+    - uuid: 2797888081e14ee7aa9f122915899fe4
+      name: 'ILOM: System summary (raw)'
+      type: HTTP_AGENT
+      key: ilom.system.raw
+      delay: 5m
+      history: 1h
+      trends: '0'
+      value_type: TEXT
+      authtype: BASIC
+      username: '{$ILOM_USER}'
+      password: '{$ILOM_PASSWORD}'
+      description: Master item - chassis-level health, power state, open problem count,
+        firmware version
+      timeout: 15s
+      url: https://{$ILOM_IP}/rest/v1/System
+    tags:
+    - tag: device
+      value: ODA X11
+    - tag: vendor
+      value: Oracle
+    macros:
+    - macro: '{$ILOM_IP}'
+      value: 10.1.251.204
+    - macro: '{$ILOM_PASSWORD}'
+      value: change_me
+    - macro: '{$ILOM_USER}'
+      value: monitor
