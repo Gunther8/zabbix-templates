@@ -15,12 +15,22 @@ Config via environment variables:
 Usage:
     python export_via_api.py                # export all templates
     python export_via_api.py "NTP*" "Synology*"   # filter by name glob(s)
+    python export_via_api.py --custom-only   # skip Zabbix's own built-in templates
+    python export_via_api.py --list          # just list templates + built-in/custom, no export
+
+"--custom-only" relies on the "vendor_name" field (Zabbix 6.2+): official
+templates shipped by Zabbix have it set (e.g. "Zabbix"), self-made ones
+don't. On older Zabbix versions this field doesn't exist and every
+template will look "custom" — in that case tell them apart by group name
+instead (built-in ones live under groups like "Templates/Operating
+systems", "Templates/Network devices", etc; put your own templates in a
+different group, e.g. "Templates/NTP").
 """
+import argparse
 import fnmatch
 import json
 import os
 import re
-import sys
 import urllib.request
 from pathlib import Path
 
@@ -57,6 +67,18 @@ def sanitize(name: str) -> str:
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("patterns", nargs="*", help="glob(s) to filter template/host name")
+    parser.add_argument(
+        "--custom-only", action="store_true",
+        help="skip templates with a vendor_name set (i.e. Zabbix's own built-in templates)",
+    )
+    parser.add_argument(
+        "--list", action="store_true",
+        help="just print templates with built-in/custom status, don't export anything",
+    )
+    args = parser.parse_args()
+
     url = os.environ.get("ZABBIX_URL")
     if not url:
         raise SystemExit("Set ZABBIX_URL, e.g. https://zabbix.example.com/api_jsonrpc.php")
@@ -72,17 +94,34 @@ def main():
             )
         auth = rpc(url, "user.login", {"username": user, "password": password})
 
-    patterns = sys.argv[1:] or None
+    templates = rpc(
+        url,
+        "template.get",
+        {
+            "output": ["templateid", "name", "host", "vendor_name", "vendor_version"],
+            "selectGroups": ["name"],
+        },
+        auth,
+    )
 
-    templates = rpc(url, "template.get", {"output": ["templateid", "name", "host"]}, auth)
-    if patterns:
+    if args.patterns:
         templates = [
             t for t in templates
-            if any(fnmatch.fnmatch(t["name"], p) or fnmatch.fnmatch(t["host"], p) for p in patterns)
+            if any(fnmatch.fnmatch(t["name"], p) or fnmatch.fnmatch(t["host"], p) for p in args.patterns)
         ]
+
+    if args.custom_only:
+        templates = [t for t in templates if not t.get("vendor_name")]
 
     if not templates:
         raise SystemExit("No matching templates found")
+
+    if args.list:
+        for t in templates:
+            groups = ", ".join(g["name"] for g in t.get("groups", []))
+            origin = f"built-in ({t['vendor_name']} {t.get('vendor_version', '')})".strip() if t.get("vendor_name") else "custom"
+            print(f"{t['name']}  [{origin}]  groups: {groups}")
+        return
 
     TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
 
