@@ -686,7 +686,7 @@ zabbix_export:
       value: https
       description: http or https
     - macro: '{$REDFISH.USER}'
-      value: gang
+      value: USERID
       description: Redfish/BMC login username
     - macro: '{$SSD.LEFTTIME.WARN}'
       value: '10'

@@ -26,7 +26,7 @@ zabbix_export:
 
       once-daily HTML report.
 
-      Data source verified 2026-07-08 against ODA X11 HA node 10.1.251.204
+      Data source verified 2026-07-08 against an ODA X11 HA node
 
       (ILOM 5.1.4.23, model ORACLE SERVER E6-2L).
 
@@ -832,7 +832,7 @@ zabbix_export:
       value: Oracle
     macros:
     - macro: '{$ILOM_IP}'
-      value: 10.1.251.204
+      value: 192.0.2.10
     - macro: '{$ILOM_PASSWORD}'
       value: change_me
     - macro: '{$ILOM_USER}'

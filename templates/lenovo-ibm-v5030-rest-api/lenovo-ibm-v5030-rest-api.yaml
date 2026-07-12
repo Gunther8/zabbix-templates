@@ -13,7 +13,7 @@ zabbix_export:
     template: Lenovo IBM V5030 REST API
     name: Lenovo IBM V5030 REST API
     description: "通过 Script Item 调用 V5030 (Spectrum Virtualize) REST API 采集状态。\n需要在\
-      \ Host 层面设置以下宏:\n  {$V5030.URL}      例如 https://10.1.1.10:7443\n  {$V5030.USER}\
+      \ Host 层面设置以下宏:\n  {$V5030.URL}      例如 https://192.0.2.10:7443\n  {$V5030.USER}\
       \     REST API 用户名(建议 Monitor 权限只读账号)\n  {$V5030.PASSWORD} REST API 密码(Secret\
       \ text 类型)\n"
     groups:
@@ -500,6 +500,6 @@ zabbix_export:
     - macro: '{$V5030.PASSWORD}'
       type: SECRET_TEXT
     - macro: '{$V5030.URL}'
-      value: https://192.168.1.1:7443
+      value: https://192.0.2.10:7443
     - macro: '{$V5030.USER}'
       value: zabbix
